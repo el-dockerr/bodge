@@ -1,7 +1,7 @@
 title: Bodge - The Idiotic Build System
 description: A minimalistic but powerful C++ build system that reads from a simple configuration file
 url: https://el-dockerr.github.io/bodge
-baseurl: /bodge
+baseurl: ""
 
 # Theme
 theme: minima
