@@ -1,7 +1,9 @@
 ---
 layout: default
-title: Getting Started - Bodge
+title: Getting Started
 ---
+
+[← Back to Home](index) | [Configuration →](configuration)
 
 # Getting Started with Bodge
 
@@ -69,9 +71,12 @@ hello.exe          # Run the executable (Windows)
 
 ## Next Steps
 
-- [Configuration Reference](configuration.html) - Learn about all configuration options
-- [Examples](examples.html) - See more complex project examples
-- [Multi-Target Projects](multi-target.html) - Build libraries and executables together
+- [Configuration Reference](configuration) - Learn about all configuration options
+- [Examples](examples) - See more complex project examples
+- [Contributing Guide](contributing) - Help improve Bodge
+
+---
+[← Back to Home](index) | [Configuration →](configuration)
 
 ## Common Issues
 

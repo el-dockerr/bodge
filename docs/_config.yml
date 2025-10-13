@@ -4,17 +4,12 @@ url: https://el-dockerr.github.io/bodge
 baseurl: ""
 
 # Theme
-theme: minima
+theme: jekyll-theme-cayman
 plugins:
   - jekyll-sitemap
   - jekyll-seo-tag
 
-# Navigation
-header_pages:
-  - getting-started.md
-  - configuration.md
-  - examples.md
-  - contributing.md
+# Navigation (handled by theme)
 
 # Repository information
 repository: el-dockerr/bodge
