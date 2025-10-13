@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -33,6 +35,10 @@ jobs:
           ruby-version: '3.1'
           bundler-cache: true
           working-directory: docs
+          
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
           
       - name: Install dependencies
         run: |
@@ -42,13 +48,12 @@ jobs:
       - name: Build site
         run: |
           cd docs
-          bundle exec jekyll build --destination ./_site --baseurl "/bodge"
+          bundle exec jekyll build --destination ./_site --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
+          PAGES_REPO_NWO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

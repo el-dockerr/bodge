@@ -6,7 +6,6 @@ baseurl: /bodge
 # Theme
 theme: minima
 plugins:
-  - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
 
@@ -16,6 +15,9 @@ header_pages:
   - configuration.md
   - examples.md
   - contributing.md
+
+# Repository information
+repository: el-dockerr/bodge
 
 # Social
 github_username: el-dockerr
