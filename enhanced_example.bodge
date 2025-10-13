@@ -1,0 +1,35 @@
+# Enhanced Bodge Configuration Example
+# This demonstrates targets, sequences, and file operations
+
+name: Multi-Target Example Project
+compiler: g++
+
+# Global settings applied to all targets
+global_cxx_flags: -std=c++17, -Wall, -Wextra, -static-libgcc, -static-libstdc++
+global_include_dirs: include, external/headers
+
+# Target: Main executable
+main.type: exe
+main.output_name: my_app
+main.sources: src/main.cpp, src/app.cpp
+main.libraries: mylib
+
+# Target: Shared library  
+mylib.type: shared
+mylib.output_name: mylib
+mylib.sources: src/lib/utils.cpp, src/lib/math.cpp
+mylib.cxx_flags: -O2, -fPIC
+
+# Target: Static library
+tools.type: static  
+tools.output_name: tools
+tools.sources: src/tools/helper.cpp, src/tools/config.cpp
+
+# Sequence: Build all and deploy
+sequence.build_all: build:mylib build:tools build:main
+
+# Sequence: Deploy (build, copy files, create directories)
+sequence.deploy: build:mylib build:main mkdir:dist copy:my_app.exe->dist/my_app.exe copy:mylib.dll->dist/mylib.dll copy:config->dist/config
+
+# Sequence: Clean (remove build artifacts)
+sequence.clean: remove:*.exe remove:*.dll remove:*.lib remove:dist
