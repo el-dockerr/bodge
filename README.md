@@ -7,6 +7,10 @@ bodge [/bɒdʒ/ verb: make or repair (something) badly or clumsily.]
 
 [Find a full documentation here](https://el-dockerr.github.io/bodge)
 
+## Download
+
+Pre-compiled binaries are available in [Releases](https://github.com/el-dockerr/bodge/releases) for Windows, Linux, and macOS.
+
 ## Building the Project
 
 ### Using bodge (preferred from know)
