@@ -1,0 +1,147 @@
+name: Build and Release Binaries
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            binary_name: bodge
+            archive_name: bodge-linux-x64.tar.gz
+          - os: windows-latest
+            target: windows-x64
+            binary_name: bodge.exe
+            archive_name: bodge-windows-x64.zip
+          - os: macos-latest
+            target: macos-x64
+            binary_name: bodge
+            archive_name: bodge-macos-x64.tar.gz
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential g++
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          # Xcode command line tools should be available
+          which g++
+
+      - name: Build binary (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          make all
+          strip ${{ matrix.binary_name }} || true  # Strip symbols to reduce size
+
+      - name: Build binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          make.bat all
+
+      - name: Test binary
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            ./${{ matrix.binary_name }} help
+            ./${{ matrix.binary_name }} list
+          else
+            ./${{ matrix.binary_name }} help
+            ./${{ matrix.binary_name }} list
+          fi
+
+      - name: Create archive (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          # Create archive with binary and essential files
+          mkdir -p release-${{ matrix.target }}
+          cp ${{ matrix.binary_name }} release-${{ matrix.target }}/
+          cp README.md release-${{ matrix.target }}/
+          cp enhanced_example.bodge release-${{ matrix.target }}/example.bodge
+          cp .bodge release-${{ matrix.target }}/
+          tar -czf ${{ matrix.archive_name }} -C release-${{ matrix.target }} .
+
+      - name: Create archive (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          # Create archive with binary and essential files
+          New-Item -ItemType Directory -Force -Path "release-${{ matrix.target }}"
+          Copy-Item "${{ matrix.binary_name }}" "release-${{ matrix.target }}/"
+          Copy-Item "README.md" "release-${{ matrix.target }}/"
+          Copy-Item "enhanced_example.bodge" "release-${{ matrix.target }}/example.bodge"
+          Copy-Item ".bodge" "release-${{ matrix.target }}/"
+          Compress-Archive -Path "release-${{ matrix.target }}/*" -DestinationPath "${{ matrix.archive_name }}"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-binary
+          path: ${{ matrix.archive_name }}
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ matrix.archive_name }}
+          asset_name: ${{ matrix.archive_name }}
+          asset_content_type: application/octet-stream
+
+  create-checksums:
+    name: Create Checksums
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create checksums
+        run: |
+          cd artifacts
+          find . -name "*.tar.gz" -o -name "*.zip" | while read file; do
+            sha256sum "$file" >> ../checksums.txt
+          done
+          cd ..
+          cat checksums.txt
+
+      - name: Upload checksums
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: checksums.txt
+          asset_name: checksums.txt
+          asset_content_type: text/plain
