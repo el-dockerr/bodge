@@ -1,6 +1,19 @@
 # GitHub Pages Setup Instructions
 
-## 1. Enable GitHub Pages
+## 1. Enable GitHub Pages (Method A - Recommended)
+
+**Using GitHub Actions (Recommended):**
+
+1. Go to your repository on GitHub: https://github.com/el-dockerr/bodge
+2. Click on **Settings** tab
+3. Scroll down to **Pages** section in the left sidebar
+4. Under **Source**, select:
+   - **Source**: GitHub Actions
+5. The workflow will automatically deploy your site
+
+## 1. Alternative Method (Method B)
+
+**Using Branch Deployment:**
 
 1. Go to your repository on GitHub: https://github.com/el-dockerr/bodge
 2. Click on **Settings** tab
