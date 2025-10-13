@@ -1,0 +1,126 @@
+name: Build and Test Bodge
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential g++
+    
+    - name: Build with Make
+      run: make all
+    
+    - name: Test basic functionality
+      run: |
+        ./bodge help
+        ./bodge list
+    
+    - name: Upload Linux binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: bodge-linux
+        path: bodge
+
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-make
+          make
+    
+    - name: Build with make.bat
+      shell: cmd
+      run: make.bat all
+    
+    - name: Test basic functionality
+      shell: cmd
+      run: |
+        bodge.exe help
+        bodge.exe list
+    
+    - name: Upload Windows binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: bodge-windows
+        path: bodge.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        # Xcode command line tools should already be available
+        which g++
+    
+    - name: Build with Make
+      run: make all
+    
+    - name: Test basic functionality
+      run: |
+        ./bodge help
+        ./bodge list
+    
+    - name: Upload macOS binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: bodge-macos
+        path: bodge
+
+  test-examples:
+    needs: [build-linux]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download Linux binary
+      uses: actions/download-artifact@v3
+      with:
+        name: bodge-linux
+    
+    - name: Make binary executable
+      run: chmod +x bodge
+    
+    - name: Test with example configuration
+      run: |
+        # Create a simple test project
+        mkdir test-project
+        cd test-project
+        
+        # Create test source
+        echo '#include <iostream>' > main.cpp
+        echo 'int main() { std::cout << "Hello from Bodge!" << std::endl; return 0; }' >> main.cpp
+        
+        # Create .bodge config
+        echo 'name: Test Project' > .bodge
+        echo 'compiler: g++' >> .bodge
+        echo 'output_name: test_app' >> .bodge
+        echo 'cxx_flags: -std=c++17, -Wall' >> .bodge
+        echo 'sources: main.cpp' >> .bodge
+        
+        # Build with bodge
+        ../bodge
+        
+        # Run the result
+        ./test_app

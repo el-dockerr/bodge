@@ -1,0 +1,62 @@
+title: Bodge - The Idiotic Build System
+description: A minimalistic but powerful C++ build system that reads from a simple configuration file
+url: https://el-dockerr.github.io/bodge
+baseurl: /bodge
+
+# Theme
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Navigation
+header_pages:
+  - getting-started.md
+  - configuration.md
+  - examples.md
+  - contributing.md
+
+# Social
+github_username: el-dockerr
+github:
+  repository_url: https://github.com/el-dockerr/bodge
+
+# SEO
+author: Swen "El Dockerr" Kalski
+twitter_username: el_dockerr
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  syntax_highlighter: rouge
+
+# Exclude from build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+# Include
+include:
+  - _pages
+
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
