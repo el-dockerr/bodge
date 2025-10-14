@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef BUILD_SYSTEM_H
+#define BUILD_SYSTEM_H
+
 #include "ProjectConfig.h"
 #include "git.h"
 #include <string>
@@ -99,3 +102,5 @@ private:
      */
     bool build_git_dependencies() const;
 };
+
+#endif // BUILD_SYSTEM_H

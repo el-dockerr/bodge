@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef PROJECT_CONFIG_H
+#define PROJECT_CONFIG_H
+
 #include <string>
 #include <vector>
 #include <map>
@@ -116,3 +119,5 @@ struct ProjectConfig {
      */
     void convert_legacy_to_targets();
 };
+
+#endif // PROJECT_CONFIG_H

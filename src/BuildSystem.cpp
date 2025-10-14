@@ -190,8 +190,10 @@ bool BuildSystem::build_git_dependencies() const {
         std::cerr << "[ERROR] Mismatch between number of dependency git URLs and git paths." << std::endl;
         return false;
     }
+
     Git git;
     int i = 0;
+    
     for (const auto& url : config_.dependencies_url) {
         std::cout << "[INFO] Cloning dependency from " << url << std::endl;
         try {
@@ -201,14 +203,24 @@ bool BuildSystem::build_git_dependencies() const {
                     std::cout << "[INFO] Running post-clone command: " << config_.run_bodge_after_clone << std::endl;
                     if (std::system(config_.run_bodge_after_clone.c_str()) != 0 && config_.run_bodge_after_clone == "true") {
                         // if we have to run bodge on the repo, we hop into the directory and run bodge in there
-                        std::string test_cmd = "cd " + config_.dependencies_path[i] + " && bodge"; // Linux/macOS
+                        std::string git_cmd = "cd " + config_.dependencies_path[i] + " && bodge"; // Linux/macOS
                         #ifdef _WIN32 // Windows
-                            std::string test_cmd = "cd /d " + config_.dependencies_path[i] + " && bodge";
+                            git_cmd = "cd " + config_.dependencies_path[i];
+                            if (std::system(git_cmd.c_str()) != 0) {
+                                std::cerr << "[ERROR] Failed to change directory to " << config_.dependencies_path[i] << std::endl;
+                                return false;
+                            }
+                            git_cmd = "bodge";
                         #endif
-                        if (std::system(test_cmd.c_str()) != 0) {
+                        if (std::system(git_cmd.c_str()) != 0) {
                             std::cerr << "[ERROR] Post-clone bodge command failed." << std::endl;
+                            git_cmd = "cd ..";
+                            std::system(git_cmd.c_str());
                             return false;
                         }
+                        git_cmd = "cd ..";
+                        std::system(git_cmd.c_str());
+                        std::cout << "[SUCCESS] Post-clone bodge command completed." << std::endl;
                     }
                 }
                 i++;
@@ -221,6 +233,7 @@ bool BuildSystem::build_git_dependencies() const {
             return false;
         }
     }
+    return true;
 }
 
 bool BuildSystem::execute_operation(const Operation& operation) const {

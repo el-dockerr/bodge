@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef STRING_UTILS_H
+#define STRING_UTILS_H
+
 #include <string>
 #include <vector>
 
@@ -34,3 +37,5 @@ public:
                            const std::string& prefix, 
                            const std::string& delimiter = " ");
 };
+
+#endif // STRING_UTILS_H

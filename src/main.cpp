@@ -6,6 +6,7 @@
  * Email: kalski.swen@gmail.com
  * License: GNU General Public License v3.0
  */
+
 #include "ConfigParser.h"
 #include "BuildSystem.h"
 #include "core.h"
