@@ -7,6 +7,14 @@ bodge [/bɒdʒ/ verb: make or repair (something) badly or clumsily.]
 
 [Find a full documentation here](https://el-dockerr.github.io/bodge)
 
+This buildsystem is the draft to overcome typical issues of CMAKE. The vast of dependencies and the chaos it causes should be solved in a 
+modern more package like approach. In Bodge you just point out the dependencies and what compiler to be used and the flags.
+Everything straight forward without complex commands. Bodge also solves 3rd party dependencies with git support, where you can define sources, pull them 
+and add them to the build chain. Other features will be added step by step.
+
+The major goal is to have one little program what makes the build of C++ software easy like maven in Java or Cargo in Rust.
+
+
 ## Download
 
 Pre-compiled binaries are available in [Releases](https://github.com/el-dockerr/bodge/releases) for Windows, Linux, and macOS.

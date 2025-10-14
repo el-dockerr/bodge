@@ -39,10 +39,15 @@ int main(int argc, char* argv[]) {
                           << "  sequence [name]    - Execute specific sequence\n"
                           << "  list               - List available targets and sequences\n"
                           << "  help               - Show this help message\n\n"
+                          << "  version            - Show version information\n\n"
                           << "Examples:\n"
                           << "  bodge                    # Build all targets\n"
                           << "  bodge build mylib        # Build target 'mylib'\n"
                           << "  bodge sequence deploy    # Execute sequence 'deploy'\n";
+                return 0;
+            } else if (command == "version" || command == "--version" || command == "-v") {
+                std::cout << "Bodge - The Idiotic Build System\n"
+                          << "Version: 0.0.4\n";
                 return 0;
             } else if (command == "list") {
                 std::cout << "Available targets:\n";
