@@ -21,9 +21,14 @@ Getting started with Bodge is incredibly simple:
 bodge              # Build all targets
 bodge help         # Show help
 bodge list         # List available targets and sequences
+bodge version      # Version
 ```
 
 ## Key Features
+
+### Fetch sources from other repositories with ease
+- Bodge fetch from predefined repositories and can build directly
+- It keeps sources up to date
 
 ### Multi-Target Support
 - Build executables, shared libraries (DLLs/SOs), and static libraries

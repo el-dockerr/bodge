@@ -23,6 +23,12 @@ Applied to all targets unless overridden:
 - `global_library_dirs`: Library search directories for all targets
 - `global_libraries`: Libraries to link for all targets
 
+### GIT Sub Resources
+
+- `dependencies_url` : Source repositories to fetch (comma-separated)
+- `dependencies_path` : Pathname where to clone the repositories (comma-separated)
+- `run_bodge_after_clone` : when the root contains a .bodge file, shall it build as well (`true`, `false` - default: `false`) 
+
 ## Target Configuration
 
 Targets are defined using the syntax: `targetname.property: value`

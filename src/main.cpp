@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
                 return 0;
             } else if (command == "version" || command == "--version" || command == "-v") {
                 std::cout << "Bodge - The Idiotic Build System\n"
+                          << "Author: Swen \"El Dockerr\" Kalski\n"
                           << "Version: " << get_version() << "\n";
                 return 0;
             } else if (command == "list") {

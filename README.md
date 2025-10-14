@@ -74,6 +74,10 @@ g++ -std=c++17 -Wall -Wextra -Isrc src/*.cpp -o bodge
 - Safe file/directory removal
 - Directory creation with parent path handling
 
+### **fetch sources from other repositories**
+- No hassle about fetch and pull
+- Dependencies can setup fluently
+
 ## Benefits of This Modular Design
 
 1. **Single Responsibility Principle**: Each class has one clear purpose
