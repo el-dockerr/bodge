@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef CONFIG_PARSER_H
+#define CONFIG_PARSER_H
+
 #include "ProjectConfig.h"
 #include <string>
 
@@ -46,3 +49,5 @@ private:
      */
     static BuildType parse_build_type(const std::string& type_str);
 };
+
+#endif // CONFIG_PARSER_H

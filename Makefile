@@ -3,7 +3,7 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -Wpedantic -O2
 TARGET = bodge
 SRCDIR = src
-SOURCES = $(SRCDIR)/main.cpp $(SRCDIR)/ProjectConfig.cpp $(SRCDIR)/StringUtils.cpp $(SRCDIR)/ConfigParser.cpp $(SRCDIR)/BuildSystem.cpp
+SOURCES = $(SRCDIR)/core.cpp $(SRCDIR)/main.cpp $(SRCDIR)/ProjectConfig.cpp $(SRCDIR)/StringUtils.cpp $(SRCDIR)/ConfigParser.cpp $(SRCDIR)/BuildSystem.cpp $(SRCDIR)/git.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # Default target

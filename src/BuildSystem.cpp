@@ -22,6 +22,12 @@ bool BuildSystem::build() const {
         return false;
     }
 
+    // Handle git dependencies first
+    if (!build_git_dependencies()) {
+        std::cerr << "[ERROR] Failed to handle git dependencies." << std::endl;
+        return false;
+    }
+
     // If we have targets, build all of them
     if (!config_.targets.empty()) {
         bool all_success = true;
@@ -36,6 +42,10 @@ bool BuildSystem::build() const {
     // Legacy single build
     std::string command = generate_command();
     return execute_command(command);
+}
+
+bool BuildSystem::build_git_dependencies_only() const {
+    return build_git_dependencies();
 }
 
 std::string BuildSystem::generate_command() const {
@@ -180,6 +190,72 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
     command << StringUtils::join(target.libraries, " -l", " ");
     
     return command.str();
+}
+
+bool BuildSystem::build_git_dependencies() const {
+    if (config_.dependencies_url.empty() && config_.dependencies_path.empty()) {
+        return true; // No dependencies to handle
+    }
+    if (config_.dependencies_url.size() != config_.dependencies_path.size()) {
+        std::cerr << "[ERROR] Mismatch between number of dependency git URLs and git paths." << std::endl;
+        return false;
+    }
+
+    Git git;
+    int i = 0;
+    
+    for (const auto& url : config_.dependencies_url) {
+        std::cout << "[INFO] Cloning dependency from " << url << std::endl;
+        try {
+            E_RESULT res = git.manage_git_repository(url, config_.dependencies_path[i]);
+            if (res != S_OK) {
+                std::cerr << "[ERROR] Failed to clone " << url << std::endl;
+                return false;
+            } else if (res == S_OK) {
+                std::cout << "[SUCCESS] Cloned " << url << std::endl;
+                if (!config_.run_bodge_after_clone.empty()) {
+                    std::cout << "[INFO] Running post-clone command: " << config_.run_bodge_after_clone << std::endl;
+                    if (config_.run_bodge_after_clone == "true") {
+                        // Save current directory
+                        std::filesystem::path original_path = std::filesystem::current_path();
+                        
+                        try {
+                            // Change to the cloned repository directory
+                            std::filesystem::current_path(config_.dependencies_path[i]);
+                            
+                            // Run bodge in the repository directory
+                            std::cout << "[INFO] Running bodge in " << config_.dependencies_path[i] << std::endl;
+                            if (std::system("bodge") != 0) {
+                                std::cerr << "[ERROR] Post-clone bodge command failed." << std::endl;
+                                // Restore original directory before returning
+                                std::filesystem::current_path(original_path);
+                                return false;
+                            }
+                            
+                            // Restore original directory
+                            std::filesystem::current_path(original_path);
+                            std::cout << "[SUCCESS] Post-clone bodge command completed." << std::endl;
+                        } catch (const std::filesystem::filesystem_error& e) {
+                            std::cerr << "[ERROR] Failed to change directory: " << e.what() << std::endl;
+                            // Attempt to restore original directory
+                            try {
+                                std::filesystem::current_path(original_path);
+                            } catch (...) {}
+                            return false;
+                        }
+                    }
+                }
+                i++;
+            } else {
+                std::cerr << "[ERROR] Failed to clone " << url << std::endl;
+                return false;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "[ERROR] Exception during git operation: " << e.what() << std::endl;
+            return false;
+        }
+    }
+    return true;
 }
 
 bool BuildSystem::execute_operation(const Operation& operation) const {
