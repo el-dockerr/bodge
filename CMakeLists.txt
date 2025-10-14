@@ -7,11 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add executable
 add_executable(bodge
+    src/core.cpp
     src/main.cpp
     src/ProjectConfig.cpp
     src/StringUtils.cpp
     src/ConfigParser.cpp
     src/BuildSystem.cpp
+    src/git.cpp
 )
 
 # Include directories

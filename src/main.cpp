@@ -8,6 +8,7 @@
  */
 #include "ConfigParser.h"
 #include "BuildSystem.h"
+#include "core.h"
 #include <iostream>
 
 int main(int argc, char* argv[]) {
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
                 return 0;
             } else if (command == "version" || command == "--version" || command == "-v") {
                 std::cout << "Bodge - The Idiotic Build System\n"
-                          << "Version: 0.0.4\n";
+                          << "Version: " << get_version() << "\n";
                 return 0;
             } else if (command == "list") {
                 std::cout << "Available targets:\n";
