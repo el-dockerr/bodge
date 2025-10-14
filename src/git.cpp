@@ -1,6 +1,6 @@
 #include "git.h"
 
-bool manage_git_repository(const std::string& repo_url, const std::string& local_path) {
+bool Git::manage_git_repository(const std::string& repo_url, const std::string& local_path) {
     // 1. Check if Git is available
     // std::system returns 0 for success on most systems when the command is found.
     if (std::system(GIT_CHECK_CMD) != 0) {

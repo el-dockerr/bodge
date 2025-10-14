@@ -182,6 +182,47 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
     return command.str();
 }
 
+bool BuildSystem::build_git_dependencies() const {
+    if (config_.dependencies_url.empty() && config_.dependencies_path.empty()) {
+        return true; // No dependencies to handle
+    }
+    if (config_.dependencies_url.size() != config_.dependencies_path.size()) {
+        std::cerr << "[ERROR] Mismatch between number of dependency git URLs and git paths." << std::endl;
+        return false;
+    }
+    Git git;
+    int i = 0;
+    for (const auto& url : config_.dependencies_url) {
+        std::cout << "[INFO] Cloning dependency from " << url << std::endl;
+        try {
+            if (git.manage_git_repository(url, config_.dependencies_path[i])) {
+                std::cout << "[SUCCESS] Cloned " << url << std::endl;
+                if (!config_.run_bodge_after_clone.empty()) {
+                    std::cout << "[INFO] Running post-clone command: " << config_.run_bodge_after_clone << std::endl;
+                    if (std::system(config_.run_bodge_after_clone.c_str()) != 0 && config_.run_bodge_after_clone == "true") {
+                        // if we have to run bodge on the repo, we hop into the directory and run bodge in there
+                        std::string test_cmd = "cd " + config_.dependencies_path[i] + " && bodge"; // Linux/macOS
+                        #ifdef _WIN32 // Windows
+                            std::string test_cmd = "cd /d " + config_.dependencies_path[i] + " && bodge";
+                        #endif
+                        if (std::system(test_cmd.c_str()) != 0) {
+                            std::cerr << "[ERROR] Post-clone bodge command failed." << std::endl;
+                            return false;
+                        }
+                    }
+                }
+                i++;
+            } else {
+                std::cerr << "[ERROR] Failed to clone " << url << std::endl;
+                return false;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "[ERROR] Exception during git operation: " << e.what() << std::endl;
+            return false;
+        }
+    }
+}
+
 bool BuildSystem::execute_operation(const Operation& operation) const {
     switch (operation.type) {
         case OperationType::BUILD:

@@ -67,6 +67,12 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
         config.global_library_dirs = StringUtils::split(value_str, ',');
     } else if (key == "global_libraries") {
         config.global_libraries = StringUtils::split(value_str, ',');
+    } else if (key == "dependencies_url") {
+        config.dependencies_url = StringUtils::split(value_str, ',');
+    } else if (key == "dependencies_path") {
+        config.dependencies_path = StringUtils::split(value_str, ',');
+    } else if (key == "run_bodge_after_clone") {
+        config.run_bodge_after_clone = value_str;
     }
     // Legacy support
     else if (key == "output_name") {

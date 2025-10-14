@@ -80,6 +80,11 @@ struct ProjectConfig {
     std::vector<std::string> global_include_dirs;
     std::vector<std::string> global_library_dirs;
     std::vector<std::string> global_libraries;
+
+    // Global git paths
+    std::vector<std::string> dependencies_url; // URLs of git repositories
+    std::vector<std::string> dependencies_path; // Local paths for git repositories
+    std::string run_bodge_after_clone; // Command to run bodge after cloning - e.g., "bodge" - when it is available
     
     // Build targets
     std::map<std::string, BuildTarget> targets;
