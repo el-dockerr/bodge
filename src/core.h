@@ -9,4 +9,11 @@
 // Function to get the version string
 const char* get_version();
 
+typedef enum
+{
+    S_OK,
+    S_ERROR_RESOURCE_NOT_FOUND
+
+} E_RESULT;
+
 #endif

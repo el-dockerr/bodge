@@ -5,7 +5,8 @@
 
 #include <iostream>
 #include <string>
-#include <cstdlib> // Required for std::system
+#include <cstdlib>
+#include "core.h"
 
 // Define the Git commands
 #define GIT_CHECK_CMD "git --version"
@@ -21,6 +22,6 @@ class Git {
      * @param local_path The local directory path for the repository.
      * @return true if the operation (clone or pull) was successful, false otherwise.
      */
-    bool manage_git_repository(const std::string& repo_url, const std::string& local_path);
+    E_RESULT manage_git_repository(const std::string& repo_url, const std::string& local_path);
 };
 #endif

@@ -5,6 +5,7 @@
 
 #include "ProjectConfig.h"
 #include "git.h"
+#include "core.h"
 #include <string>
 
 /**
@@ -23,6 +24,12 @@ public:
      * @return true if build was successful, false otherwise
      */
     bool build() const;
+
+    /**
+     * @brief Builds git dependencies specified in the configuration
+     * @return true if all dependencies were successfully handled, false otherwise
+     */
+    bool build_git_dependencies_only() const;
     
     /**
      * @brief Builds a specific target

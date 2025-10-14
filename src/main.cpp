@@ -38,12 +38,14 @@ int main(int argc, char* argv[]) {
                           << "Usage: bodge [command] [target/sequence]\n\n"
                           << "Commands:\n"
                           << "  build [target]     - Build specific target (default: all targets)\n"
+                          << "  fetch              - Fetch git dependencies only\n"
                           << "  sequence [name]    - Execute specific sequence\n"
                           << "  list               - List available targets and sequences\n"
                           << "  help               - Show this help message\n\n"
                           << "  version            - Show version information\n\n"
                           << "Examples:\n"
                           << "  bodge                    # Build all targets\n"
+                          << "  bodge fetch              # Fetch git dependencies\n"
                           << "  bodge build mylib        # Build target 'mylib'\n"
                           << "  bodge sequence deploy    # Execute sequence 'deploy'\n";
                 return 0;
@@ -68,6 +70,9 @@ int main(int argc, char* argv[]) {
                     std::cout << "  " << name << " (" << seq.operations.size() << " operations)\n";
                 }
                 return 0;
+            } else if (command == "fetch") {
+                // Fetch git dependencies only
+                success = builder.build_git_dependencies_only();
             } else if (command == "build") {
                 if (argc > 2) {
                     // Build specific target

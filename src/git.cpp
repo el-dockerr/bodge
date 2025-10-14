@@ -1,11 +1,11 @@
 #include "git.h"
 
-bool Git::manage_git_repository(const std::string& repo_url, const std::string& local_path) {
+ E_RESULT Git::manage_git_repository(const std::string& repo_url, const std::string& local_path) {
     // 1. Check if Git is available
     // std::system returns 0 for success on most systems when the command is found.
     if (std::system(GIT_CHECK_CMD) != 0) {
         std::cerr << "Error: Git is not available. Please install Git and ensure it is in your system's PATH." << std::endl;
-        return false;
+        return S_ERROR_RESOURCE_NOT_FOUND;
     }
 
     // 2. Check if the repository directory exists
@@ -27,7 +27,7 @@ bool Git::manage_git_repository(const std::string& repo_url, const std::string& 
     std::string pull_cmd = GIT_PULL_CMD(local_path);
     if (std::system(pull_cmd.c_str()) == 0) {
         std::cout << "Repository already cloned. Successfully pulled latest changes." << std::endl;
-        return true;
+        return S_OK;
     } else {
         // Pull failed (non-zero return code), likely because the directory doesn't exist
         // or isn't a Git repository. Attempt to clone.
@@ -36,10 +36,10 @@ bool Git::manage_git_repository(const std::string& repo_url, const std::string& 
         std::string clone_cmd = GIT_CLONE_CMD(repo_url, local_path);
         if (std::system(clone_cmd.c_str()) == 0) {
             std::cout << "Successfully cloned repository." << std::endl;
-            return true;
+            return S_OK;
         } else {
             std::cerr << "Error: Git clone failed. Command: " << clone_cmd << std::endl;
-            return false;
+            return S_ERROR_RESOURCE_NOT_FOUND;
         }
     }
 }
