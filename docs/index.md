@@ -40,6 +40,11 @@ bodge version      # Version
 - Copy, remove, and create directory operations
 - Perfect for deployment workflows
 
+### Automatic Source Collection
+- Use `src/**` to automatically collect all C++ files from directories
+- Recursive pattern matching with dependency analysis
+- No need to manually list every source file
+
 ### Advanced Build System
 - Cross-platform compatibility (Windows/Linux)
 - Static linking support to eliminate DLL dependencies
@@ -56,6 +61,7 @@ bodge version      # Version
 |-------|-------------|
 | [Getting Started](getting-started) | Installation and first steps |
 | [Configuration Reference](configuration) | Complete `.bodge` file reference |  
+| [Automatic Source Collection](automatic-source-collection) | Using `src/**` patterns for automatic file discovery |
 | [Examples](examples) | Real-world usage examples |
 | [Contributing Guide](contributing) | How to contribute |
 

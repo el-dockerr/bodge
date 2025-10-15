@@ -48,6 +48,13 @@ private:
      * @return BuildType enum value
      */
     static BuildType parse_build_type(const std::string& type_str);
+    
+    /**
+     * @brief Expands source patterns to actual file paths
+     * @param sources Vector of source patterns/files
+     * @return Vector of expanded source file paths
+     */
+    static std::vector<std::string> expand_sources(const std::vector<std::string>& sources);
 };
 
 #endif // CONFIG_PARSER_H

@@ -1,0 +1,18 @@
+# Simple Bodge Configuration with Automatic Source Collection
+
+name: My C++ Project
+compiler: g++
+
+# Automatically collect all C++ source files from src directory and subdirectories
+# Bodge will find all .cpp, .cxx, .cc, and .c++ files and order them correctly
+sources: src/**
+
+# Output settings
+output_name: my_program
+type: exe
+
+# Compiler flags
+cxx_flags: -std=c++17, -Wall, -Wextra, -O2
+
+# Include directories (headers will be found automatically)
+include_dirs: include
