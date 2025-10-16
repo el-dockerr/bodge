@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 
         // Create build system
         BuildSystem builder(project);
-        bool success = true;
+        E_RESULT result;
 
         // Check for command line arguments
         if (argc > 1) {
@@ -73,19 +73,19 @@ int main(int argc, char* argv[]) {
                 return 0;
             } else if (command == "fetch") {
                 // Fetch git dependencies only
-                success = builder.build_git_dependencies_only();
+                result = builder.build_git_dependencies_only();
             } else if (command == "build") {
                 if (argc > 2) {
                     // Build specific target
-                    success = builder.build_target(argv[2]);
+                    result = builder.build_target(argv[2]);
                 } else {
                     // Build all targets
-                    success = builder.build();
+                    result = builder.build();
                 }
             } else if (command == "sequence") {
                 if (argc > 2) {
                     // Execute specific sequence
-                    success = builder.execute_sequence(argv[2]);
+                    result = builder.execute_sequence(argv[2]);
                 } else {
                     std::cerr << "[ERROR] Please specify a sequence name." << std::endl;
                     return 1;
@@ -97,10 +97,10 @@ int main(int argc, char* argv[]) {
             }
         } else {
             // Default: build all targets
-            success = builder.build();
+            result = builder.build();
         }
 
-        return success ? 0 : 1;
+        return result == S_OK ? 0 : 1;
     }
     catch (const std::exception& e) {
         std::cerr << "[FATAL] An unexpected error occurred: " << e.what() << std::endl;
