@@ -1,0 +1,51 @@
+# Complete Example: Game Engine Project with Automatic Source Collection
+
+name: GameEngine
+compiler: g++
+
+# Global settings
+global_cxx_flags: -std=c++17, -Wall, -Wextra, -O2, -static-libgcc, -static-libstdc++
+global_include_dirs: include, external/include
+
+# Core Engine Library (automatically collect all engine source files)
+engine.type: shared
+engine.output_name: gameengine
+engine.sources: src/engine/**
+engine.cxx_flags: -fPIC
+engine.libraries: opengl32, glfw3
+
+# Game Logic Library (automatically collect from specific subdirectories)
+gamelogic.type: static
+gamelogic.output_name: gamelogic
+gamelogic.sources: src/game/**, src/entities/**
+gamelogic.libraries: engine
+
+# Utilities Library (mix of automatic and manual)
+utils.type: static
+utils.output_name: utils
+utils.sources: src/utils/**, src/math/vector.cpp, src/math/matrix.cpp
+
+# Main Game Executable
+game.type: exe
+game.output_name: mygame
+game.sources: src/main.cpp
+game.libraries: gamelogic, utils, engine
+
+# Tools Executable (all tools in one folder)
+tools.type: exe
+tools.output_name: gametools
+tools.sources: tools/**
+tools.libraries: utils, engine
+
+# Build sequences
+sequence.build_libs: build:utils build:engine build:gamelogic
+sequence.build_all: sequence:build_libs build:game build:tools
+sequence.package: sequence:build_all mkdir:release copy:mygame.exe->release/ copy:gameengine.dll->release/ copy:assets->release/assets
+sequence.clean: remove:*.exe remove:*.dll remove:*.lib remove:*.a remove:release
+
+# This configuration will:
+# 1. Automatically find all .cpp files in src/engine/ and subdirectories
+# 2. Automatically find all .cpp files in src/game/ and src/entities/ 
+# 3. Mix automatic collection (src/utils/**) with manual files (src/math/*.cpp)
+# 4. Analyze dependencies and compile in correct order
+# 5. Build everything with proper library linking

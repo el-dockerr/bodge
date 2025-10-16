@@ -14,6 +14,7 @@ add_executable(bodge
     src/ConfigParser.cpp
     src/BuildSystem.cpp
     src/git.cpp
+    src/FileSystemUtils.cpp
 )
 
 # Include directories

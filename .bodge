@@ -4,4 +4,4 @@ compiler: g++
 output_name: bodge
 
 cxx_flags: -std=c++17 -Wall -Wextra -Wpedantic -O2 -static-libgcc -static-libstdc++
-sources: src/core.cpp src/main.cpp src/ProjectConfig.cpp src/StringUtils.cpp src/ConfigParser.cpp src/BuildSystem.cpp src/git.cpp
+sources: src/**

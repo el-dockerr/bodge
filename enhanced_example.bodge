@@ -1,29 +1,35 @@
 # Enhanced Bodge Configuration Example
-# This demonstrates targets, sequences, and file operations
+# This demonstrates targets, sequences, and automatic source collection
 
 name: Multi-Target Example Project
 compiler: g++
+
+# Automatic Source Collection:
+# Use "src/**" to recursively collect all C++ files from src and subdirectories
+# Use "src/*" to collect all C++ files from src directory only
+# Use "src/specific.cpp" for individual files
+# Files are automatically ordered based on dependency analysis
 
 # Global settings applied to all targets
 global_cxx_flags: -std=c++17, -Wall, -Wextra, -static-libgcc, -static-libstdc++
 global_include_dirs: include, external/headers
 
-# Target: Main executable
+# Target: Main executable (using automatic source collection)
 main.type: exe
 main.output_name: my_app
-main.sources: src/main.cpp, src/app.cpp
+main.sources: src/**
 main.libraries: mylib
 
-# Target: Shared library  
+# Target: Shared library (using automatic source collection)
 mylib.type: shared
 mylib.output_name: mylib
-mylib.sources: src/lib/utils.cpp, src/lib/math.cpp
+mylib.sources: src/lib/**
 mylib.cxx_flags: -O2, -fPIC
 
-# Target: Static library
+# Target: Static library (using automatic source collection)
 tools.type: static  
 tools.output_name: tools
-tools.sources: src/tools/helper.cpp, src/tools/config.cpp
+tools.sources: src/tools/**
 
 # Sequence: Build all and deploy
 sequence.build_all: build:mylib build:tools build:main

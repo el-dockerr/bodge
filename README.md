@@ -69,6 +69,12 @@ g++ -std=c++17 -Wall -Wextra -Isrc src/*.cpp -o bodge
 - Static linking support to eliminate DLL dependencies
 - Comprehensive error handling and logging
 
+### **Automatic Source Collection**
+- Use `src/**` to automatically collect all C++ files from directories
+- Recursive pattern matching with `**` and single directory with `*`
+- Automatic dependency analysis and build order optimization
+- No need to manually list every source file
+
 ### **File Operations**
 - Built-in file and directory copying
 - Safe file/directory removal
@@ -109,7 +115,18 @@ Create a `.bodge` configuration file and run:
 
 ### Configuration Examples
 
-#### Simple Legacy Configuration:
+#### Simple Configuration with Automatic Source Collection:
+```
+name: MyProject
+compiler: g++
+output_name: my_app
+cxx_flags: -std=c++17, -Wall, -O2
+sources: src/**
+include_dirs: include
+libraries: pthread, m
+```
+
+#### Legacy Configuration (Manual File Listing):
 ```
 name: MyProject
 compiler: g++
@@ -129,22 +146,22 @@ compiler: g++
 global_cxx_flags: -std=c++17, -Wall, -static-libgcc, -static-libstdc++
 global_include_dirs: include
 
-# Main executable target
+# Main executable target (automatic source collection)
 main.type: exe
 main.output_name: my_app
-main.sources: src/main.cpp, src/app.cpp
+main.sources: src/**
 main.libraries: mylib
 
-# Shared library target
+# Shared library target (automatic source collection)
 mylib.type: shared
 mylib.output_name: mylib
-mylib.sources: src/lib/utils.cpp, src/lib/math.cpp
+mylib.sources: src/lib/**
 mylib.cxx_flags: -O2, -fPIC
 
-# Static library target
+# Static library target (automatic source collection)
 tools.type: static
 tools.output_name: tools
-tools.sources: src/tools/helper.cpp
+tools.sources: src/tools/**
 
 # Build sequence
 sequence.build_all: build:mylib build:tools build:main

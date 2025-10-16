@@ -1,5 +1,6 @@
 #include "ConfigParser.h"
 #include "StringUtils.h"
+#include "FileSystemUtils.h"
 #include <fstream>
 #include <iostream>
 
@@ -80,7 +81,8 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
     } else if (key == "cxx_flags") {
         config.cxx_flags = StringUtils::split(value_str, ',');
     } else if (key == "sources") {
-        config.sources = StringUtils::split(value_str, ',');
+        std::vector<std::string> raw_sources = StringUtils::split(value_str, ',');
+        config.sources = expand_sources(raw_sources);
     } else if (key == "include_dirs") {
         config.include_dirs = StringUtils::split(value_str, ',');
     } else if (key == "library_dirs") {
@@ -109,7 +111,8 @@ void ConfigParser::process_target_config_line(const std::string& key, const std:
     } else if (property == "output_name") {
         target.output_name = value;
     } else if (property == "sources") {
-        target.sources = StringUtils::split(value, ',');
+        std::vector<std::string> raw_sources = StringUtils::split(value, ',');
+        target.sources = expand_sources(raw_sources);
     } else if (property == "cxx_flags") {
         target.cxx_flags = StringUtils::split(value, ',');
     } else if (property == "include_dirs") {
@@ -173,4 +176,8 @@ BuildType ConfigParser::parse_build_type(const std::string& type_str) {
         return BuildType::STATIC_LIBRARY;
     }
     return BuildType::EXECUTABLE; // Default
+}
+
+std::vector<std::string> ConfigParser::expand_sources(const std::vector<std::string>& sources) {
+    return FileSystemUtils::expand_source_patterns(sources);
 }
