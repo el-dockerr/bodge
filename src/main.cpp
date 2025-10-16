@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
             result = builder.build();
         }
 
-        return result == S_OK ? 0 : 1;
+        return result == S_OK;
     }
     catch (const std::exception& e) {
         std::cerr << "[FATAL] An unexpected error occurred: " << e.what() << std::endl;
