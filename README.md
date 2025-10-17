@@ -240,4 +240,4 @@ app@linux_x64.output_suffix: _linux64
 
 ## License
 
-GNU General Public License v3.0
+Bodge License (BL-V1.0)
