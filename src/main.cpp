@@ -32,30 +32,31 @@ int main(int argc, char* argv[]) {
         // Check for command line arguments
         if (argc > 1) {
             std::string command = argv[1];
+
+            std::cout << "Bodge - The Idiotic Build System" << std::endl;
             
             if (command == "help" || command == "--help" || command == "-h") {
-                std::cout << "Bodge - The Idiotic Build System\n"
-                          << "Usage: bodge [command] [target/sequence]\n\n"
-                          << "Commands:\n"
-                          << "  build [target]     - Build specific target (default: all targets)\n"
-                          << "  fetch              - Fetch git dependencies only\n"
-                          << "  sequence [name]    - Execute specific sequence\n"
-                          << "  list               - List available targets and sequences\n"
-                          << "  help               - Show this help message\n\n"
-                          << "  version            - Show version information\n\n"
-                          << "Examples:\n"
-                          << "  bodge                    # Build all targets\n"
-                          << "  bodge fetch              # Fetch git dependencies\n"
-                          << "  bodge build mylib        # Build target 'mylib'\n"
-                          << "  bodge sequence deploy    # Execute sequence 'deploy'\n";
+                std::cout << "Usage: bodge [command] [target/sequence]" << std::endl << std::endl
+                          << "Commands:" << std::endl
+                          << "  build [target]     - Build specific target (default: all targets)" << std::endl
+                          << "  fetch              - Fetch git dependencies only" << std::endl
+                          << "  sequence [name]    - Execute specific sequence" << std::endl
+                          << "  list               - List available targets and sequences" << std::endl
+                          << "  help               - Show this help message" << std::endl << std::endl
+                          << "  version            - Show version information" << std::endl << std::endl
+                          << "Examples:" << std::endl
+                          << "  bodge                    # Build all targets" << std::endl
+                          << "  bodge fetch              # Fetch git dependencies" << std::endl
+                          << "  bodge build mylib        # Build target 'mylib'" << std::endl
+                          << "  bodge sequence deploy    # Execute sequence 'deploy'" << std::endl;
                 return 0;
             } else if (command == "version" || command == "--version" || command == "-v") {
-                std::cout << "Bodge - The Idiotic Build System\n"
-                          << "Author: Swen \"El Dockerr\" Kalski\n"
-                          << "Version: " << get_version() << "\n";
+                std::cout << "Bodge - The Idiotic Build System" << std::endl
+                          << "Author: Swen \"El Dockerr\" Kalski" << std::endl
+                          << "Version: " << get_version() << std::endl;
                 return 0;
             } else if (command == "list") {
-                std::cout << "Available targets:\n";
+                std::cout << "Available targets:" << std::endl;
                 for (const auto& [name, target] : project.targets) {
                     std::string type_str;
                     switch (target.type) {
@@ -63,12 +64,12 @@ int main(int argc, char* argv[]) {
                         case BuildType::SHARED_LIBRARY: type_str = "shared"; break;
                         case BuildType::STATIC_LIBRARY: type_str = "static"; break;
                     }
-                    std::cout << "  " << name << " (" << type_str << ")\n";
+                    std::cout << "  " << name << " (" << type_str << ")" << std::endl;
                 }
-                
-                std::cout << "\nAvailable sequences:\n";
+
+                std::cout << std::endl << "Available sequences:" << std::endl;
                 for (const auto& [name, seq] : project.sequences) {
-                    std::cout << "  " << name << " (" << seq.operations.size() << " operations)\n";
+                    std::cout << "  " << name << " (" << seq.operations.size() << " operations)" << std::endl;
                 }
                 return 0;
             } else if (command == "fetch") {
