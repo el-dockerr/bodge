@@ -1,12 +1,9 @@
-name: My fancy software
+name: Bodge
 compiler: g++
 
-output_name: fancy
+output_name: bodge
+
+platforms: windows_x64, linux_x64, apple_x86
 
 cxx_flags: -std=c++17 -Wall -Wextra -Wpedantic -O2 -static-libgcc -static-libstdc++
-sources: src/main.cpp src/ProjectConfig.cpp src/StringUtils.cpp src/ConfigParser.cpp src/BuildSystem.cpp
-
-include_dirs: include, external/sdk/headers
-library_dirs: /usr/lib, /usr/local/lib, external/sdk/lib
-
-libraries: sfml-graphics, sfml-window, sfml-system, sqlite3
+sources: src/**
