@@ -12,7 +12,7 @@ E_RESULT BuildSystem::build() const {
 
     // Validate system support
     if (!validate_system_support()) {
-        std::cerr << "System command execution is not fully supported on this platform. "
+        std::cerr << "System command execution is not fully supported on this platform. " << std::endl
                   << "Build may fail." << std::endl;
     }
 
@@ -76,16 +76,16 @@ std::string BuildSystem::generate_command() const {
 }
 
 E_RESULT BuildSystem::execute_command(const std::string& command) const {
-    std::cout << "\n[INFO] Executing command (The Idiot Way):\n" << command << "\n" << std::endl;
+    std::cout << "\n[INFO] Executing command (The Idiot Way):" << std::endl << command  << std::endl;
 
     // Execute the command using the system shell
     int result = std::system(command.c_str());
 
     if (result == 0) {
-        std::cout << "\n[SUCCESS] Project '" << config_.output_name << "' built successfully." << std::endl;
+        std::cout << std::endl << "[SUCCESS] Project '" << config_.output_name << "' built successfully." << std::endl;
         return S_OK;
     } else {
-        std::cerr << "\n[ERROR] Bodge encountered an issue (Exit Code: " << result 
+        std::cerr << std::endl << "[ERROR] Bodge encountered an issue (Exit Code: " << result
                   << "). Check the compiler output for details." << std::endl;
         return S_COMMAND_EXECUTION_FAILED;
     }
@@ -107,8 +107,8 @@ E_RESULT BuildSystem::build_target(const std::string& target_name) const {
         std::cerr << "[ERROR] Target '" << target_name << "' is invalid." << std::endl;
         return S_INVALID_CONFIGURATION;
     }
-    
-    std::cout << "\n[INFO] Building target: " << target_name << std::endl;
+
+    std::cout << std::endl << "[INFO] Building target: " << target_name << std::endl;
     std::string command = generate_target_command(target);
     return execute_command(command);
 }
@@ -121,7 +121,7 @@ E_RESULT BuildSystem::execute_sequence(const std::string& sequence_name) const {
     }
     
     const Sequence& sequence = it->second;
-    std::cout << "\n[INFO] Executing sequence: " << sequence_name << std::endl;
+    std::cout << std::endl << "[INFO] Executing sequence: " << sequence_name << std::endl;
     
     for (const Operation& op : sequence.operations) {
         if (execute_operation(op) != S_OK) {
