@@ -122,3 +122,6 @@ jobs:
         
         # Build with bodge
         ../bodge
+        
+        # Run the result
+        ./test_app
