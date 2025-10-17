@@ -116,6 +116,7 @@ jobs:
         echo 'name: Test Project' > .bodge
         echo 'compiler: g++' >> .bodge
         echo 'output_name: test_app' >> .bodge
+        echo 'platforms: linux_x64' >> .bodge
         echo 'cxx_flags: -std=c++17, -Wall' >> .bodge
         echo 'sources: main.cpp' >> .bodge
         

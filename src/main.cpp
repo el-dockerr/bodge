@@ -9,6 +9,7 @@
 
 #include "ConfigParser.h"
 #include "BuildSystem.h"
+#include "Architecture.h"
 #include "core.h"
 #include <iostream>
 
@@ -42,6 +43,7 @@ int main(int argc, char* argv[]) {
                           << "  fetch              - Fetch git dependencies only" << std::endl
                           << "  sequence [name]    - Execute specific sequence" << std::endl
                           << "  list               - List available targets and sequences" << std::endl
+                          << "  platform           - Show current platform information" << std::endl
                           << "  help               - Show this help message" << std::endl << std::endl
                           << "  version            - Show version information" << std::endl << std::endl
                           << "Examples:" << std::endl
@@ -55,6 +57,19 @@ int main(int argc, char* argv[]) {
                           << "Author: Swen \"El Dockerr\" Kalski" << std::endl
                           << "Version: " << get_version() << std::endl;
                 return 0;
+            } else if (command == "platform") {
+                Platform current_platform = ArchitectureDetector::detect_current_platform();
+                std::cout << "Current platform information:" << std::endl;
+                std::cout << "  OS: " << ArchitectureDetector::os_to_string(current_platform.operating_system) << std::endl;
+                std::cout << "  Architecture: " << ArchitectureDetector::architecture_to_string(current_platform.architecture) << std::endl;
+                std::cout << "  Platform string: " << current_platform.to_string() << std::endl << std::endl;
+                
+                std::cout << "Supported platforms:" << std::endl;
+                std::vector<Platform> all_platforms = Platform::get_all_platforms();
+                for (const Platform& platform : all_platforms) {
+                    std::cout << "  " << platform.to_string() << std::endl;
+                }
+                return 0;
             } else if (command == "list") {
                 std::cout << "Available targets:" << std::endl;
                 for (const auto& [name, target] : project.targets) {
@@ -64,13 +79,32 @@ int main(int argc, char* argv[]) {
                         case BuildType::SHARED_LIBRARY: type_str = "shared"; break;
                         case BuildType::STATIC_LIBRARY: type_str = "static"; break;
                     }
-                    std::cout << "  " << name << " (" << type_str << ")" << std::endl;
+                    std::cout << "  " << name << " (" << type_str << ")";
+                    
+                    // Show target platforms if configured
+                    if (!target.target_platforms.empty()) {
+                        std::cout << " - platforms: ";
+                        for (size_t i = 0; i < target.target_platforms.size(); ++i) {
+                            if (i > 0) std::cout << ", ";
+                            std::cout << target.target_platforms[i].to_string();
+                        }
+                    }
+                    std::cout << std::endl;
                 }
 
                 std::cout << std::endl << "Available sequences:" << std::endl;
                 for (const auto& [name, seq] : project.sequences) {
                     std::cout << "  " << name << " (" << seq.operations.size() << " operations)" << std::endl;
                 }
+                
+                // Show configured target platforms
+                if (!project.default_target_platforms.empty()) {
+                    std::cout << std::endl << "Default target platforms:" << std::endl;
+                    for (const Platform& platform : project.default_target_platforms) {
+                        std::cout << "  " << platform.to_string() << std::endl;
+                    }
+                }
+                
                 return 0;
             } else if (command == "fetch") {
                 // Fetch git dependencies only
@@ -101,7 +135,7 @@ int main(int argc, char* argv[]) {
             result = builder.build();
         }
 
-        return result == S_OK;
+        return result == S_OK ? 0 : 1;
     }
     catch (const std::exception& e) {
         std::cerr << "[FATAL] An unexpected error occurred: " << e.what() << std::endl;

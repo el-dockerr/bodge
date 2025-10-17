@@ -1,7 +1,9 @@
-name: The Bodge Build System
+name: Bodge
 compiler: g++
 
 output_name: bodge
+
+platforms: windows_x64, linux_x64, apple_x86
 
 cxx_flags: -std=c++17 -Wall -Wextra -Wpedantic -O2 -static-libgcc -static-libstdc++
 sources: src/**

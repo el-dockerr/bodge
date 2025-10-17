@@ -37,6 +37,14 @@ public:
      * @return S_OK if build was successful, S_BUILD_FAILED otherwise
      */
     E_RESULT build_target(const std::string& target_name) const;
+    
+    /**
+     * @brief Builds a specific target for a specific platform
+     * @param target_name Name of the target to build
+     * @param platform Target platform to build for
+     * @return S_OK if build was successful, S_BUILD_FAILED otherwise
+     */
+    E_RESULT build_target_for_platform(const std::string& target_name, const Platform& platform) const;
 
     /**
      * @brief Executes a specific sequence
@@ -73,6 +81,20 @@ private:
      * @return The complete build command as a string
      */
     std::string generate_target_command(const BuildTarget& target) const;
+    
+    /**
+     * @brief Generates build command for a specific target and platform
+     * @param target The target to generate command for
+     * @param platform The platform to build for
+     * @return The complete build command as a string
+     */
+    std::string generate_target_command_for_platform(const BuildTarget& target, const Platform& platform) const;
+    
+    /**
+     * @brief Gets the platforms to build for (either from config or current platform)
+     * @return Vector of platforms to build for
+     */
+    std::vector<Platform> get_target_platforms() const;
     
     /**
      * @brief Executes a single operation

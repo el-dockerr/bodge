@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "Architecture.h"
 
 /**
  * @brief Types of build outputs supported
@@ -52,15 +53,29 @@ struct BuildTarget {
     std::vector<std::string> library_dirs;
     std::vector<std::string> libraries;
     
+    // Platform-specific configurations
+    std::map<Platform, PlatformConfig> platform_configs;
+    std::vector<Platform> target_platforms;  // If empty, build for current platform
+    
     /**
      * @brief Checks if the target has minimum required fields
      */
     bool is_valid() const;
     
     /**
-     * @brief Gets the appropriate file extension for the build type
+     * @brief Gets the appropriate file extension for the build type and platform
      */
-    std::string get_output_extension() const;
+    std::string get_output_extension(const Platform& platform = Platform()) const;
+    
+    /**
+     * @brief Gets merged configuration for a specific platform
+     */
+    PlatformConfig get_platform_config(const Platform& platform) const;
+    
+    /**
+     * @brief Checks if this target should be built for the given platform
+     */
+    bool should_build_for_platform(const Platform& platform) const;
 };
 
 /**
@@ -94,6 +109,10 @@ struct ProjectConfig {
     
     // Build sequences
     std::map<std::string, Sequence> sequences;
+    
+    // Global platform-specific configurations
+    std::map<Platform, PlatformConfig> global_platform_configs;
+    std::vector<Platform> default_target_platforms;  // Default platforms to build for
     
     // Legacy support - converted to default target
     std::string output_name;

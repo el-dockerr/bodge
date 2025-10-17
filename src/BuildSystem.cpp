@@ -28,12 +28,22 @@ E_RESULT BuildSystem::build() const {
         return S_BUILD_FAILED;
     }
 
-    // If we have targets, build all of them
+    // If we have targets, build all of them for all target platforms
     if (!config_.targets.empty()) {
         bool all_success = true;
-        for (const auto& [name, target] : config_.targets) {
-            if (!build_target(name)) {
-                all_success = false;
+        std::vector<Platform> target_platforms = get_target_platforms();
+        
+        for (const Platform& platform : target_platforms) {
+            std::cout << std::endl << "[INFO] Building for platform: " << platform.to_string() << std::endl;
+            
+            for (const auto& [name, target] : config_.targets) {
+                if (target.should_build_for_platform(platform)) {
+                    if (build_target_for_platform(name, platform) != S_OK) {
+                        all_success = false;
+                    }
+                } else {
+                    std::cout << "[SKIP] Target '" << name << "' not configured for platform " << platform.to_string() << std::endl;
+                }
             }
         }
         return all_success ? S_OK : S_BUILD_FAILED;
@@ -96,6 +106,12 @@ E_RESULT BuildSystem::validate_system_support() const {
 }
 
 E_RESULT BuildSystem::build_target(const std::string& target_name) const {
+    // Build for current platform by default
+    Platform current_platform = ArchitectureDetector::detect_current_platform();
+    return build_target_for_platform(target_name, current_platform);
+}
+
+E_RESULT BuildSystem::build_target_for_platform(const std::string& target_name, const Platform& platform) const {
     auto it = config_.targets.find(target_name);
     if (it == config_.targets.end()) {
         std::cerr << "[ERROR] Target '" << target_name << "' not found." << std::endl;
@@ -108,8 +124,13 @@ E_RESULT BuildSystem::build_target(const std::string& target_name) const {
         return S_INVALID_CONFIGURATION;
     }
 
-    std::cout << std::endl << "[INFO] Building target: " << target_name << std::endl;
-    std::string command = generate_target_command(target);
+    if (!target.should_build_for_platform(platform)) {
+        std::cout << "[SKIP] Target '" << target_name << "' not configured for platform " << platform.to_string() << std::endl;
+        return S_OK;
+    }
+
+    std::cout << std::endl << "[INFO] Building target: " << target_name << " for platform: " << platform.to_string() << std::endl;
+    std::string command = generate_target_command_for_platform(target, platform);
     return execute_command(command);
 }
 
@@ -336,4 +357,100 @@ E_RESULT BuildSystem::create_directory(const std::string& path) const {
         std::cerr << "[ERROR] Directory creation failed: " << e.what() << std::endl;
         return S_COMMAND_EXECUTION_FAILED;
     }
+}
+
+std::string BuildSystem::generate_target_command_for_platform(const BuildTarget& target, const Platform& platform) const {
+    // Get platform-specific configuration
+    PlatformConfig platform_config = target.get_platform_config(platform);
+    
+    std::stringstream command;
+    
+    // 1. Compiler
+    command << config_.compiler;
+    
+    // 2. Global CXX Flags
+    command << " " << StringUtils::join(config_.global_cxx_flags, "", " ");
+    
+    // 3. Global platform-specific flags
+    auto global_plat_it = config_.global_platform_configs.find(platform);
+    if (global_plat_it != config_.global_platform_configs.end()) {
+        command << " " << StringUtils::join(global_plat_it->second.cxx_flags, "", " ");
+    }
+    
+    // 4. Target-specific CXX Flags (including platform-specific)
+    command << " " << StringUtils::join(platform_config.cxx_flags, "", " ");
+    
+    // 5. Build type specific flags
+    switch (target.type) {
+        case BuildType::SHARED_LIBRARY:
+            if (platform.operating_system == OS::WINDOWS) {
+                command << " -shared";
+            } else {
+                command << " -shared -fPIC";
+            }
+            break;
+        case BuildType::STATIC_LIBRARY:
+            // Note: Static libraries need different handling (ar command)
+            // For now, we'll treat them as objects that need to be archived
+            break;
+        case BuildType::EXECUTABLE:
+            // No special flags needed
+            break;
+    }
+    
+    // 6. Global Include Directories (-I)
+    command << StringUtils::join(config_.global_include_dirs, " -I", " ");
+    
+    // 7. Global platform-specific include directories
+    if (global_plat_it != config_.global_platform_configs.end()) {
+        command << StringUtils::join(global_plat_it->second.include_dirs, " -I", " ");
+    }
+    
+    // 8. Platform-specific Include Directories (-I)
+    command << StringUtils::join(platform_config.include_dirs, " -I", " ");
+    
+    // 9. Platform-specific Source Files
+    command << StringUtils::join(platform_config.sources, "", " ");
+    
+    // 10. Output file (-o) with platform-specific suffix
+    std::string output_name = target.output_name + platform_config.output_name_suffix + target.get_output_extension(platform);
+    command << " -o " << output_name;
+    
+    // 11. Global Library Directories (-L)
+    command << StringUtils::join(config_.global_library_dirs, " -L", " ");
+    
+    // 12. Global platform-specific library directories
+    if (global_plat_it != config_.global_platform_configs.end()) {
+        command << StringUtils::join(global_plat_it->second.library_dirs, " -L", " ");
+    }
+    
+    // 13. Platform-specific Library Directories (-L)
+    command << StringUtils::join(platform_config.library_dirs, " -L", " ");
+    
+    // 14. Global Libraries (-l)
+    command << StringUtils::join(config_.global_libraries, " -l", " ");
+    
+    // 15. Global platform-specific libraries
+    if (global_plat_it != config_.global_platform_configs.end()) {
+        command << StringUtils::join(global_plat_it->second.libraries, " -l", " ");
+    }
+    
+    // 16. Platform-specific Libraries (-l)
+    command << StringUtils::join(platform_config.libraries, " -l", " ");
+    
+    return command.str();
+}
+
+std::vector<Platform> BuildSystem::get_target_platforms() const {
+    std::vector<Platform> platforms;
+    
+    // If default target platforms are configured, use those
+    if (!config_.default_target_platforms.empty()) {
+        platforms = config_.default_target_platforms;
+    } else {
+        // Otherwise, use current platform
+        platforms.push_back(ArchitectureDetector::detect_current_platform());
+    }
+    
+    return platforms;
 }

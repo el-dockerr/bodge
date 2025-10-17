@@ -43,6 +43,22 @@ private:
     static void process_sequence_config_line(const std::string& key, const std::string& value, ProjectConfig& config);
     
     /**
+     * @brief Processes platform-specific configuration lines
+     * @param key The configuration key (e.g., "target@platform.property" or "@platform.property")
+     * @param value The configuration value
+     * @param config Reference to the configuration object to populate
+     */
+    static void process_platform_config_line(const std::string& key, const std::string& value, ProjectConfig& config);
+    
+    /**
+     * @brief Applies a property to platform configuration
+     * @param plat_config Platform configuration to modify
+     * @param property Property name
+     * @param value Property value
+     */
+    static void apply_platform_property(PlatformConfig& plat_config, const std::string& property, const std::string& value);
+    
+    /**
      * @brief Parses build type from string
      * @param type_str String representation of build type
      * @return BuildType enum value

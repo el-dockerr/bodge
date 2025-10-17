@@ -84,6 +84,13 @@ g++ -std=c++17 -Wall -Wextra -Isrc src/*.cpp -o bodge
 - No hassle about fetch and pull
 - Dependencies can setup fluently
 
+### **Cross-Platform & Architecture-Aware Building**
+- Automatic platform detection (Windows, Linux, Unix, macOS)
+- Architecture-specific builds (x86, x64, ARM, ARM64)
+- Platform-specific compiler flags and configurations
+- Build for multiple platforms from a single configuration
+- Platform-specific source files and dependencies
+
 ## Benefits of This Modular Design
 
 1. **Single Responsibility Principle**: Each class has one clear purpose
@@ -111,6 +118,7 @@ Create a `.bodge` configuration file and run:
 ```bash
 ./bodge build mylib           # Build specific target
 ./bodge sequence deploy       # Execute specific sequence
+./bodge platform              # Show platform information
 ```
 
 ### Configuration Examples
@@ -173,10 +181,56 @@ sequence.deploy: build:main mkdir:dist copy:my_app.exe->dist/my_app.exe copy:con
 sequence.clean: remove:*.exe remove:*.dll remove:dist
 ```
 
+#### Architecture-Aware Configuration:
+```
+name: Cross-Platform Project
+compiler: g++
+
+# Build for multiple platforms
+platforms: windows_x64, linux_x64, windows_x86
+
+# Global platform-specific settings
+@windows.cxx_flags: -static-libgcc, -static-libstdc++
+@linux.cxx_flags: -pthread
+@x86.cxx_flags: -m32
+@x64.cxx_flags: -m64
+
+# Main application with platform-specific configurations
+app.type: exe
+app.output_name: my_app
+app.sources: src/main.cpp, src/common.cpp
+
+# Platform-specific source files
+app@windows.sources: src/windows_impl.cpp
+app@linux.sources: src/linux_impl.cpp
+
+# Platform-specific libraries
+app@windows.libraries: kernel32, user32
+app@linux.libraries: dl, rt
+
+# Platform-specific output suffixes
+app@windows_x64.output_suffix: _x64
+app@windows_x86.output_suffix: _x86
+app@linux_x64.output_suffix: _linux64
+```
+
 ### Supported Target Types
 - `exe` / `executable` - Executable programs (.exe on Windows)
 - `shared` / `dll` / `so` - Shared libraries (.dll on Windows, .so on Linux)
 - `static` / `lib` - Static libraries (.lib on Windows, .a on Linux)
+
+### Supported Platforms
+- `windows_x86` / `windows_x64` - Windows 32-bit/64-bit
+- `linux_x86` / `linux_x64` - Linux 32-bit/64-bit  
+- `unix_x86` / `unix_x64` - Unix 32-bit/64-bit
+- `apple_x86` / `apple_x64` - macOS 32-bit/64-bit
+- `*_arm` / `*_arm64` - ARM 32-bit/64-bit (any OS)
+
+### Platform Configuration Syntax
+- `platforms: platform1, platform2` - Set default target platforms
+- `@platform.property: value` - Global platform-specific configuration
+- `target@platform.property: value` - Target-specific platform configuration
+- `target.platforms: platform1, platform2` - Platforms for specific target
 
 ### Supported Operations in Sequences
 - `build:target_name` - Build a specific target
@@ -186,4 +240,4 @@ sequence.clean: remove:*.exe remove:*.dll remove:dist
 
 ## License
 
-GNU General Public License v3.0
+Bodge License (BL-V1.0)

@@ -98,7 +98,7 @@ We welcome contributions! Please see our [Contributing Guide](contributing.html)
 
 ## License
 
-Bodge is licensed under the [GNU General Public License v3.0](https://github.com/el-dockerr/bodge/blob/main/LICENSE).
+Bodge is licensed under the [Bodge License (BL-V1.0)](https://github.com/el-dockerr/bodge/blob/main/license.txt).
 
 ---
 
