@@ -1,0 +1,18 @@
+# Simple test for architecture-aware building
+name: Platform Test
+compiler: g++
+
+# Set multiple target platforms
+platforms: windows_x64, windows_x86
+
+# Global platform-specific flags  
+@windows.cxx_flags: -static-libgcc, -static-libstdc++
+@x86.cxx_flags: -m32
+@x64.cxx_flags: -m64
+
+# Test target with platform-specific output suffixes
+test.type: exe
+test.output_name: test_app  
+test.sources: src/main.cpp
+test@windows_x64.output_suffix: _x64
+test@windows_x86.output_suffix: _x86

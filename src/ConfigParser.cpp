@@ -43,6 +43,12 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
         return;
     }
 
+    // Check for platform-specific configuration [target@platform.property] or [@platform.property]
+    if (key.find('@') != std::string::npos) {
+        process_platform_config_line(key, value_str, config);
+        return;
+    }
+
     // Check for target-specific configuration [target.property]
     if (key.find('.') != std::string::npos) {
         process_target_config_line(key, value_str, config);
@@ -89,6 +95,15 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
         config.library_dirs = StringUtils::split(value_str, ',');
     } else if (key == "libraries") {
         config.libraries = StringUtils::split(value_str, ',');
+    } else if (key == "platforms") {
+        // Set default target platforms
+        std::vector<std::string> platform_strings = StringUtils::split(value_str, ',');
+        for (const std::string& platform_str : platform_strings) {
+            Platform platform = Platform::from_string(StringUtils::trim(platform_str));
+            if (platform.operating_system != OS::UNKNOWN || platform.architecture != Architecture::UNKNOWN) {
+                config.default_target_platforms.push_back(platform);
+            }
+        }
     }
 }
 
@@ -121,6 +136,15 @@ void ConfigParser::process_target_config_line(const std::string& key, const std:
         target.library_dirs = StringUtils::split(value, ',');
     } else if (property == "libraries") {
         target.libraries = StringUtils::split(value, ',');
+    } else if (property == "platforms") {
+        // Set target platforms
+        std::vector<std::string> platform_strings = StringUtils::split(value, ',');
+        for (const std::string& platform_str : platform_strings) {
+            Platform platform = Platform::from_string(StringUtils::trim(platform_str));
+            if (platform.operating_system != OS::UNKNOWN || platform.architecture != Architecture::UNKNOWN) {
+                target.target_platforms.push_back(platform);
+            }
+        }
     }
 }
 
@@ -176,6 +200,68 @@ BuildType ConfigParser::parse_build_type(const std::string& type_str) {
         return BuildType::STATIC_LIBRARY;
     }
     return BuildType::EXECUTABLE; // Default
+}
+
+void ConfigParser::process_platform_config_line(const std::string& key, const std::string& value, ProjectConfig& config) {
+    size_t at_pos = key.find('@');
+    std::string target_name = (at_pos > 0) ? key.substr(0, at_pos) : "";
+    std::string platform_and_property = key.substr(at_pos + 1);
+    
+    size_t dot_pos = platform_and_property.find('.');
+    if (dot_pos == std::string::npos) {
+        return; // Malformed platform configuration
+    }
+    
+    std::string platform_str = platform_and_property.substr(0, dot_pos);
+    std::string property = platform_and_property.substr(dot_pos + 1);
+    
+    Platform platform = Platform::from_string(platform_str);
+    if (platform.operating_system == OS::UNKNOWN && platform.architecture == Architecture::UNKNOWN) {
+        return; // Invalid platform
+    }
+    
+    if (target_name.empty()) {
+        // Global platform configuration [@platform.property]
+        if (config.global_platform_configs.find(platform) == config.global_platform_configs.end()) {
+            config.global_platform_configs[platform] = PlatformConfig(platform);
+        }
+        
+        PlatformConfig& plat_config = config.global_platform_configs[platform];
+        apply_platform_property(plat_config, property, value);
+    } else {
+        // Target-specific platform configuration [target@platform.property]
+        if (config.targets.find(target_name) == config.targets.end()) {
+            config.targets[target_name] = BuildTarget();
+            config.targets[target_name].name = target_name;
+            config.targets[target_name].type = BuildType::EXECUTABLE; // Default
+        }
+        
+        BuildTarget& target = config.targets[target_name];
+        
+        if (target.platform_configs.find(platform) == target.platform_configs.end()) {
+            target.platform_configs[platform] = PlatformConfig(platform);
+        }
+        
+        PlatformConfig& plat_config = target.platform_configs[platform];
+        apply_platform_property(plat_config, property, value);
+    }
+}
+
+void ConfigParser::apply_platform_property(PlatformConfig& plat_config, const std::string& property, const std::string& value) {
+    if (property == "cxx_flags") {
+        plat_config.cxx_flags = StringUtils::split(value, ',');
+    } else if (property == "sources") {
+        std::vector<std::string> raw_sources = StringUtils::split(value, ',');
+        plat_config.sources = expand_sources(raw_sources);
+    } else if (property == "include_dirs") {
+        plat_config.include_dirs = StringUtils::split(value, ',');
+    } else if (property == "library_dirs") {
+        plat_config.library_dirs = StringUtils::split(value, ',');
+    } else if (property == "libraries") {
+        plat_config.libraries = StringUtils::split(value, ',');
+    } else if (property == "output_suffix") {
+        plat_config.output_name_suffix = value;
+    }
 }
 
 std::vector<std::string> ConfigParser::expand_sources(const std::vector<std::string>& sources) {

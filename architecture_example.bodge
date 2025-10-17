@@ -1,0 +1,62 @@
+# Architecture-Aware Bodge Configuration Example
+# This demonstrates cross-platform building with architecture-specific configurations
+
+name: Cross-Platform Example
+compiler: g++
+
+# Global settings applied to all targets
+global_cxx_flags: -std=c++17, -Wall, -Wextra
+global_include_dirs: include, external/headers
+
+# Set default target platforms (if not specified, builds for current platform only)
+platforms: windows_x64, linux_x64, windows_x86
+
+# Global platform-specific configurations
+@windows.cxx_flags: -static-libgcc, -static-libstdc++
+@linux.cxx_flags: -pthread
+@x86.cxx_flags: -m32
+@x64.cxx_flags: -m64
+
+# Target: Main executable
+main.type: exe
+main.output_name: my_app
+main.sources: src/main.cpp, src/utils.cpp
+main.libraries: mylib
+
+# Platform-specific configuration for main target
+main@windows.libraries: kernel32, user32
+main@linux.libraries: dl, rt
+main@windows_x64.output_suffix: _x64
+main@windows_x86.output_suffix: _x86
+main@linux_x64.output_suffix: _linux64
+
+# Target: Cross-platform library
+mylib.type: shared
+mylib.output_name: mylib
+mylib.sources: src/lib/core.cpp, src/lib/platform.cpp
+mylib.cxx_flags: -O2, -fPIC
+
+# Platform-specific sources for the library
+mylib@windows.sources: src/lib/windows_specific.cpp
+mylib@linux.sources: src/lib/linux_specific.cpp
+mylib@unix.sources: src/lib/unix_specific.cpp
+
+# Target: Windows-only utility (only builds on Windows platforms)
+winutil.type: exe
+winutil.output_name: winutil
+winutil.sources: src/windows/utility.cpp
+winutil.platforms: windows_x86, windows_x64
+winutil@windows.libraries: kernel32, user32, gdi32
+
+# Target: Linux-only daemon (only builds on Linux platforms)  
+daemon.type: exe
+daemon.output_name: daemon
+daemon.sources: src/linux/daemon.cpp
+daemon.platforms: linux_x64, linux_x86
+daemon@linux.cxx_flags: -pthread, -DDAEMON_MODE
+
+# Sequence: Build all targets for all platforms
+sequence.build_all: build:mylib build:main build:winutil build:daemon
+
+# Sequence: Deploy (architecture-aware - copies appropriate binaries)
+sequence.deploy: build:mylib build:main mkdir:dist copy:my_app*->dist/ copy:mylib*->dist/
