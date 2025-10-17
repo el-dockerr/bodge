@@ -21,29 +21,29 @@ public:
 
     /**
      * @brief Main function to construct and execute the build command
-     * @return true if build was successful, false otherwise
+     * @return S_OK if build was successful, S_BUILD_FAILED otherwise
      */
-    bool build() const;
+    E_RESULT build() const;
 
     /**
      * @brief Builds git dependencies specified in the configuration
-     * @return true if all dependencies were successfully handled, false otherwise
+     * @return S_OK if all dependencies were successfully handled, S_BUILD_FAILED otherwise
      */
-    bool build_git_dependencies_only() const;
-    
+    E_RESULT build_git_dependencies_only() const;
+
     /**
      * @brief Builds a specific target
      * @param target_name Name of the target to build
-     * @return true if build was successful, false otherwise
+     * @return S_OK if build was successful, S_BUILD_FAILED otherwise
      */
-    bool build_target(const std::string& target_name) const;
-    
+    E_RESULT build_target(const std::string& target_name) const;
+
     /**
      * @brief Executes a specific sequence
      * @param sequence_name Name of the sequence to execute
-     * @return true if sequence was successful, false otherwise
+     * @return S_OK if sequence was successful, S_COMMAND_EXECUTION_FAILED otherwise
      */
-    bool execute_sequence(const std::string& sequence_name) const;
+    E_RESULT execute_sequence(const std::string& sequence_name) const;
 
 private:
     const ProjectConfig config_;
@@ -57,15 +57,15 @@ private:
     /**
      * @brief Executes the build command and handles output
      * @param command The command to execute
-     * @return true if execution was successful, false otherwise
+     * @return S_OK if execution was successful, S_COMMAND_EXECUTION_FAILED otherwise
      */
-    bool execute_command(const std::string& command) const;
+    E_RESULT execute_command(const std::string& command) const;
 
     /**
      * @brief Validates that the system can execute commands
-     * @return true if system command execution is supported
+     * @return S_OK if system command execution is supported, S_FAILURE otherwise
      */
-    bool validate_system_support() const;
+    E_RESULT validate_system_support() const;
     
     /**
      * @brief Generates build command for a specific target
@@ -77,37 +77,37 @@ private:
     /**
      * @brief Executes a single operation
      * @param operation The operation to execute
-     * @return true if operation was successful, false otherwise
+     * @return S_OK if operation was successful, S_FAILURE otherwise
      */
-    bool execute_operation(const Operation& operation) const;
+    E_RESULT execute_operation(const Operation& operation) const;
     
     /**
      * @brief Copies a file or directory
      * @param source Source path
      * @param destination Destination path
-     * @return true if copy was successful, false otherwise
+     * @return S_OK if copy was successful, S_FILE_OPERATION_FAILED otherwise
      */
-    bool copy_file_or_directory(const std::string& source, const std::string& destination) const;
+    E_RESULT copy_file_or_directory(const std::string& source, const std::string& destination) const;
     
     /**
      * @brief Removes a file or directory
      * @param path Path to remove
-     * @return true if removal was successful, false otherwise
+     * @return S_OK if removal was successful, S_FILE_OPERATION_FAILED otherwise
      */
-    bool remove_file_or_directory(const std::string& path) const;
+    E_RESULT remove_file_or_directory(const std::string& path) const;
     
     /**
      * @brief Creates a directory
      * @param path Directory path to create
-     * @return true if creation was successful, false otherwise
+     * @return S_OK if creation was successful, S_FILE_OPERATION_FAILED otherwise
      */
-    bool create_directory(const std::string& path) const;
+    E_RESULT create_directory(const std::string& path) const;
 
     /**
      * @brief Builds git dependencies specified in the configuration
-     * @return true if all dependencies were successfully handled, false otherwise
+     * @return S_OK if all dependencies were successfully handled, S_BUILD_FAILED otherwise
      */
-    bool build_git_dependencies() const;
+    E_RESULT build_git_dependencies() const;
 };
 
 #endif // BUILD_SYSTEM_H

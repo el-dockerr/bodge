@@ -7,7 +7,7 @@
 
 BuildSystem::BuildSystem(const ProjectConfig& config) : config_(config) {}
 
-bool BuildSystem::build() const {
+E_RESULT BuildSystem::build() const {
     std::cout << "--- Bodge: The Idiotic Build System ---" << std::endl;
 
     // Validate system support
@@ -19,13 +19,13 @@ bool BuildSystem::build() const {
     // Check for essential inputs
     if (!config_.is_valid()) {
         std::cerr << "[ERROR] Configuration is invalid. Please check your .bodge file." << std::endl;
-        return false;
+        return S_ERROR_INVALID_ARGUMENT;
     }
 
     // Handle git dependencies first
-    if (!build_git_dependencies()) {
+    if (build_git_dependencies() != S_OK) {
         std::cerr << "[ERROR] Failed to handle git dependencies." << std::endl;
-        return false;
+        return S_BUILD_FAILED;
     }
 
     // If we have targets, build all of them
@@ -36,7 +36,7 @@ bool BuildSystem::build() const {
                 all_success = false;
             }
         }
-        return all_success;
+        return all_success ? S_OK : S_BUILD_FAILED;
     }
     
     // Legacy single build
@@ -44,7 +44,7 @@ bool BuildSystem::build() const {
     return execute_command(command);
 }
 
-bool BuildSystem::build_git_dependencies_only() const {
+E_RESULT BuildSystem::build_git_dependencies_only() const {
     return build_git_dependencies();
 }
 
@@ -75,7 +75,7 @@ std::string BuildSystem::generate_command() const {
     return command.str();
 }
 
-bool BuildSystem::execute_command(const std::string& command) const {
+E_RESULT BuildSystem::execute_command(const std::string& command) const {
     std::cout << "\n[INFO] Executing command (The Idiot Way):\n" << command << "\n" << std::endl;
 
     // Execute the command using the system shell
@@ -83,29 +83,29 @@ bool BuildSystem::execute_command(const std::string& command) const {
 
     if (result == 0) {
         std::cout << "\n[SUCCESS] Project '" << config_.output_name << "' built successfully." << std::endl;
-        return true;
+        return S_OK;
     } else {
         std::cerr << "\n[ERROR] Bodge encountered an issue (Exit Code: " << result 
                   << "). Check the compiler output for details." << std::endl;
-        return false;
+        return S_COMMAND_EXECUTION_FAILED;
     }
 }
 
-bool BuildSystem::validate_system_support() const {
-    return std::system(nullptr) != 0;
+E_RESULT BuildSystem::validate_system_support() const {
+    return std::system(nullptr) != 0 ? S_OK : S_FAILURE;
 }
 
-bool BuildSystem::build_target(const std::string& target_name) const {
+E_RESULT BuildSystem::build_target(const std::string& target_name) const {
     auto it = config_.targets.find(target_name);
     if (it == config_.targets.end()) {
         std::cerr << "[ERROR] Target '" << target_name << "' not found." << std::endl;
-        return false;
+        return S_TARGET_NOT_FOUND;
     }
     
     const BuildTarget& target = it->second;
     if (!target.is_valid()) {
         std::cerr << "[ERROR] Target '" << target_name << "' is invalid." << std::endl;
-        return false;
+        return S_INVALID_CONFIGURATION;
     }
     
     std::cout << "\n[INFO] Building target: " << target_name << std::endl;
@@ -113,25 +113,25 @@ bool BuildSystem::build_target(const std::string& target_name) const {
     return execute_command(command);
 }
 
-bool BuildSystem::execute_sequence(const std::string& sequence_name) const {
+E_RESULT BuildSystem::execute_sequence(const std::string& sequence_name) const {
     auto it = config_.sequences.find(sequence_name);
     if (it == config_.sequences.end()) {
         std::cerr << "[ERROR] Sequence '" << sequence_name << "' not found." << std::endl;
-        return false;
+        return S_ERROR_RESOURCE_NOT_FOUND;
     }
     
     const Sequence& sequence = it->second;
     std::cout << "\n[INFO] Executing sequence: " << sequence_name << std::endl;
     
     for (const Operation& op : sequence.operations) {
-        if (!execute_operation(op)) {
+        if (execute_operation(op) != S_OK) {
             std::cerr << "[ERROR] Sequence '" << sequence_name << "' failed." << std::endl;
-            return false;
+            return S_FAILURE;
         }
     }
     
     std::cout << "[SUCCESS] Sequence '" << sequence_name << "' completed successfully." << std::endl;
-    return true;
+    return S_OK;
 }
 
 std::string BuildSystem::generate_target_command(const BuildTarget& target) const {
@@ -192,13 +192,13 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
     return command.str();
 }
 
-bool BuildSystem::build_git_dependencies() const {
+E_RESULT BuildSystem::build_git_dependencies() const {
     if (config_.dependencies_url.empty() && config_.dependencies_path.empty()) {
-        return true; // No dependencies to handle
+        return S_OK; // No dependencies to handle
     }
     if (config_.dependencies_url.size() != config_.dependencies_path.size()) {
         std::cerr << "[ERROR] Mismatch between number of dependency git URLs and git paths." << std::endl;
-        return false;
+        return S_ERROR_INVALID_ARGUMENT;
     }
 
     Git git;
@@ -210,7 +210,7 @@ bool BuildSystem::build_git_dependencies() const {
             E_RESULT res = git.manage_git_repository(url, config_.dependencies_path[i]);
             if (res != S_OK) {
                 std::cerr << "[ERROR] Failed to clone " << url << std::endl;
-                return false;
+                return S_FAILURE;
             } else if (res == S_OK) {
                 std::cout << "[SUCCESS] Cloned " << url << std::endl;
                 if (!config_.run_bodge_after_clone.empty()) {
@@ -229,7 +229,7 @@ bool BuildSystem::build_git_dependencies() const {
                                 std::cerr << "[ERROR] Post-clone bodge command failed." << std::endl;
                                 // Restore original directory before returning
                                 std::filesystem::current_path(original_path);
-                                return false;
+                                return S_COMMAND_EXECUTION_FAILED;
                             }
                             
                             // Restore original directory
@@ -241,24 +241,24 @@ bool BuildSystem::build_git_dependencies() const {
                             try {
                                 std::filesystem::current_path(original_path);
                             } catch (...) {}
-                            return false;
+                            return S_COMMAND_EXECUTION_FAILED;
                         }
                     }
                 }
                 i++;
             } else {
                 std::cerr << "[ERROR] Failed to clone " << url << std::endl;
-                return false;
+                return S_FAILURE;
             }
         } catch (const std::exception& e) {
             std::cerr << "[ERROR] Exception during git operation: " << e.what() << std::endl;
-            return false;
+            return S_FAILURE;
         }
     }
-    return true;
+    return S_OK;
 }
 
-bool BuildSystem::execute_operation(const Operation& operation) const {
+E_RESULT BuildSystem::execute_operation(const Operation& operation) const {
     switch (operation.type) {
         case OperationType::BUILD:
             return build_target(operation.target);
@@ -269,10 +269,10 @@ bool BuildSystem::execute_operation(const Operation& operation) const {
         case OperationType::MKDIR:
             return create_directory(operation.target);
     }
-    return false;
+    return S_FAILURE; // Unknown operation type
 }
 
-bool BuildSystem::copy_file_or_directory(const std::string& source, const std::string& destination) const {
+E_RESULT BuildSystem::copy_file_or_directory(const std::string& source, const std::string& destination) const {
     std::cout << "[INFO] Copying " << source << " -> " << destination << std::endl;
     
     try {
@@ -291,14 +291,14 @@ bool BuildSystem::copy_file_or_directory(const std::string& source, const std::s
         }
         
         std::cout << "[SUCCESS] Copy completed." << std::endl;
-        return true;
+        return S_OK;
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "[ERROR] Copy failed: " << e.what() << std::endl;
-        return false;
+        return S_COMMAND_EXECUTION_FAILED;
     }
 }
 
-bool BuildSystem::remove_file_or_directory(const std::string& path) const {
+E_RESULT BuildSystem::remove_file_or_directory(const std::string& path) const {
     std::cout << "[INFO] Removing " << path << std::endl;
     
     try {
@@ -310,15 +310,15 @@ bool BuildSystem::remove_file_or_directory(const std::string& path) const {
         } else {
             std::cout << "[INFO] Nothing to remove (path doesn't exist)." << std::endl;
         }
-        
-        return true;
+
+        return S_OK;
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "[ERROR] Remove failed: " << e.what() << std::endl;
-        return false;
+        return S_COMMAND_EXECUTION_FAILED;
     }
 }
 
-bool BuildSystem::create_directory(const std::string& path) const {
+E_RESULT BuildSystem::create_directory(const std::string& path) const {
     std::cout << "[INFO] Creating directory " << path << std::endl;
     
     try {
@@ -330,10 +330,10 @@ bool BuildSystem::create_directory(const std::string& path) const {
         } else {
             std::cout << "[INFO] Directory already exists." << std::endl;
         }
-        
-        return true;
+
+        return S_OK;
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "[ERROR] Directory creation failed: " << e.what() << std::endl;
-        return false;
+        return S_COMMAND_EXECUTION_FAILED;
     }
 }
