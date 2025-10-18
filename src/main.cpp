@@ -13,6 +13,50 @@
 #include "core.h"
 #include <iostream>
 
+// Helper structure to hold parsed command line arguments
+struct CommandLineArgs {
+    std::string command;
+    std::string target_or_sequence;
+    Platform platform;
+    bool platform_specified = false;
+    bool arch_specified = false;
+};
+
+// Function to parse command line arguments
+CommandLineArgs parse_command_line(int argc, char* argv[]) {
+    CommandLineArgs args;
+    
+    // Default to current platform
+    args.platform = ArchitectureDetector::detect_current_platform();
+    
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        
+        if (arg.find("--platform=") == 0) {
+            std::string platform_str = arg.substr(11); // Remove "--platform="
+            args.platform = Platform::from_string(platform_str);
+            args.platform_specified = true;
+        } else if (arg.find("--arch=") == 0) {
+            std::string arch_str = arg.substr(7); // Remove "--arch="
+            Architecture arch = ArchitectureDetector::string_to_architecture(arch_str);
+            if (arch != Architecture::UNKNOWN) {
+                // Keep current OS, change architecture
+                args.platform.architecture = arch;
+                args.arch_specified = true;
+            }
+        } else if (arg.find("--") == 0) {
+            // Skip other unknown options
+            continue;
+        } else if (args.command.empty()) {
+            args.command = arg;
+        } else if (args.target_or_sequence.empty()) {
+            args.target_or_sequence = arg;
+        }
+    }
+    
+    return args;
+}
+
 int main(int argc, char* argv[]) {
     try {
         // Load configuration from the file (defaults to .bodge)
@@ -30,14 +74,19 @@ int main(int argc, char* argv[]) {
         BuildSystem builder(project);
         E_RESULT result;
 
-        // Check for command line arguments
-        if (argc > 1) {
-            std::string command = argv[1];
+        // Parse command line arguments
+        CommandLineArgs args = parse_command_line(argc, argv);
 
+        // Check for command line arguments
+        if (argc > 1 && !args.command.empty()) {
             std::cout << "Bodge - The Idiotic Build System" << std::endl;
             
-            if (command == "help" || command == "--help" || command == "-h") {
-                std::cout << "Usage: bodge [command] [target/sequence]" << std::endl << std::endl
+            if (args.platform_specified || args.arch_specified) {
+                std::cout << "Target platform: " << args.platform.to_string() << std::endl << std::endl;
+            }
+            
+            if (args.command == "help" || args.command == "--help" || args.command == "-h") {
+                std::cout << "Usage: bodge [command] [target/sequence] [options]" << std::endl << std::endl
                           << "Commands:" << std::endl
                           << "  build [target]     - Build specific target (default: all targets)" << std::endl
                           << "  fetch              - Fetch git dependencies only" << std::endl
@@ -46,18 +95,22 @@ int main(int argc, char* argv[]) {
                           << "  platform           - Show current platform information" << std::endl
                           << "  help               - Show this help message" << std::endl << std::endl
                           << "  version            - Show version information" << std::endl << std::endl
+                          << "Options:" << std::endl
+                          << "  --platform=<platform>  - Build for specific platform" << std::endl
+                          << "  --arch=<arch>          - Build for specific architecture" << std::endl << std::endl
                           << "Examples:" << std::endl
-                          << "  bodge                    # Build all targets" << std::endl
-                          << "  bodge fetch              # Fetch git dependencies" << std::endl
-                          << "  bodge build mylib        # Build target 'mylib'" << std::endl
-                          << "  bodge sequence deploy    # Execute sequence 'deploy'" << std::endl;
+                          << "  bodge                          # Build all targets for current platform" << std::endl
+                          << "  bodge --platform=linux_x64    # Build all targets for Linux 64-bit" << std::endl
+                          << "  bodge build mylib --arch=x86   # Build 'mylib' for 32-bit" << std::endl
+                          << "  bodge build myapp --platform=windows_x64  # Build 'myapp' for Windows 64-bit" << std::endl
+                          << "  bodge fetch                    # Fetch git dependencies" << std::endl
+                          << "  bodge sequence deploy          # Execute sequence 'deploy'" << std::endl;
                 return 0;
-            } else if (command == "version" || command == "--version" || command == "-v") {
-                std::cout << "Bodge - The Idiotic Build System" << std::endl
-                          << "Author: Swen \"El Dockerr\" Kalski" << std::endl
+            } else if (args.command == "version" || args.command == "--version" || args.command == "-v") {
+                std::cout << "Author: Swen \"El Dockerr\" Kalski" << std::endl
                           << "Version: " << get_version() << std::endl;
                 return 0;
-            } else if (command == "platform") {
+            } else if (args.command == "platform") {
                 Platform current_platform = ArchitectureDetector::detect_current_platform();
                 std::cout << "Current platform information:" << std::endl;
                 std::cout << "  OS: " << ArchitectureDetector::os_to_string(current_platform.operating_system) << std::endl;
@@ -70,7 +123,7 @@ int main(int argc, char* argv[]) {
                     std::cout << "  " << platform.to_string() << std::endl;
                 }
                 return 0;
-            } else if (command == "list") {
+            } else if (args.command == "list") {
                 std::cout << "Available targets:" << std::endl;
                 for (const auto& [name, target] : project.targets) {
                     std::string type_str;
@@ -106,33 +159,63 @@ int main(int argc, char* argv[]) {
                 }
                 
                 return 0;
-            } else if (command == "fetch") {
+            } else if (args.command == "fetch") {
                 // Fetch git dependencies only
                 result = builder.build_git_dependencies_only();
-            } else if (command == "build") {
-                if (argc > 2) {
-                    // Build specific target
-                    result = builder.build_target(argv[2]);
+            } else if (args.command == "build") {
+                if (!args.target_or_sequence.empty()) {
+                    // Build specific target for specified platform
+                    result = builder.build_target_for_platform(args.target_or_sequence, args.platform);
                 } else {
-                    // Build all targets
-                    result = builder.build();
+                    // Build all targets for specified platform
+                    if (args.platform_specified || args.arch_specified) {
+                        // Build all targets for the specified platform
+                        bool all_success = true;
+                        for (const auto& [name, target] : project.targets) {
+                            if (target.should_build_for_platform(args.platform)) {
+                                if (builder.build_target_for_platform(name, args.platform) != S_OK) {
+                                    all_success = false;
+                                }
+                            }
+                        }
+                        result = all_success ? S_OK : S_BUILD_FAILED;
+                    } else {
+                        // Use default build behavior
+                        result = builder.build();
+                    }
                 }
-            } else if (command == "sequence") {
-                if (argc > 2) {
+            } else if (args.command == "sequence") {
+                if (!args.target_or_sequence.empty()) {
                     // Execute specific sequence
-                    result = builder.execute_sequence(argv[2]);
+                    result = builder.execute_sequence(args.target_or_sequence);
                 } else {
                     std::cerr << "[ERROR] Please specify a sequence name." << std::endl;
                     return 1;
                 }
             } else {
-                std::cerr << "[ERROR] Unknown command: " << command << std::endl;
+                std::cerr << "[ERROR] Unknown command: " << args.command << std::endl;
                 std::cerr << "Use 'bodge help' for usage information." << std::endl;
                 return 1;
             }
         } else {
-            // Default: build all targets
-            result = builder.build();
+            // Default behavior or platform-only arguments
+            if (args.platform_specified || args.arch_specified) {
+                std::cout << "Bodge - The Idiotic Build System" << std::endl;
+                std::cout << "Target platform: " << args.platform.to_string() << std::endl << std::endl;
+                
+                // Build all targets for the specified platform
+                bool all_success = true;
+                for (const auto& [name, target] : project.targets) {
+                    if (target.should_build_for_platform(args.platform)) {
+                        if (builder.build_target_for_platform(name, args.platform) != S_OK) {
+                            all_success = false;
+                        }
+                    }
+                }
+                result = all_success ? S_OK : S_BUILD_FAILED;
+            } else {
+                result = builder.build();
+            }
         }
 
         return result == S_OK ? 0 : 1;

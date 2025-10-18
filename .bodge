@@ -1,9 +1,14 @@
 name: Bodge
-compiler: g++
 
 output_name: bodge
-
-platforms: windows_x64, linux_x64, apple_x86
-
-cxx_flags: -std=c++17 -Wall -Wextra -Wpedantic -O2 -static-libgcc -static-libstdc++
 sources: src/**
+
+platforms: windows_x64, linux_x64, apple_x64
+
+# Global C++ Compiler and Flags
+compiler: g++
+cxx_flags: -std=c++17 -Wall -Wextra -Wpedantic -O2
+
+# Platform-specific settings
+@windows_x64.cxx_flags: -static-libgcc, -static-libstdc++
+
