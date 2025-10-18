@@ -23,8 +23,15 @@ Pre-compiled binaries are available in [Releases](https://github.com/el-dockerr/
 
 ### Using bodge (preferred from know)
 ```bash
-bodge
+bodge --platform=windows_x86
 ```
+
+To choose the right platform use:
+```bash
+bodge platform
+```
+You can add your own targets in `.bodge`
+
 Yes it is that easy !!! Bodge can be already build by bodge
 
 ### Using Make
@@ -116,9 +123,11 @@ Create a `.bodge` configuration file and run:
 ### Advanced Usage with Targets and Sequences
 
 ```bash
-./bodge build mylib           # Build specific target
-./bodge sequence deploy       # Execute specific sequence
-./bodge platform              # Show platform information
+./bodge build mylib               # Build specific target
+./bodge sequence deploy           # Execute specific sequence
+./bodge platform                  # Show platform information
+./bodge --platform=windows_x64    # Build only for this platform
+./bodge --arch=x86                # Build only for targets from architecture x86
 ```
 
 ### Configuration Examples
