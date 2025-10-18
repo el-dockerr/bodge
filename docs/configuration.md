@@ -124,6 +124,14 @@ app@windows_x64.output_suffix: _x64
 app@windows_x86.output_suffix: _x86
 ```
 
+To run the build only for a single platform or architecture, you can do it by adding the `--platform` or `--arch`.
+Example:
+```bash
+bodge --platform=windows_x64   #to run only windows build
+bodge --arch=x86 #to run a 32bit specific build.
+
+```
+
 ## Sequences
 
 Sequences define workflows with multiple operations:
