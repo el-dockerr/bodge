@@ -1,9 +1,15 @@
 #include "BuildSystem.h"
 #include "StringUtils.h"
+#include "FileWatcher.h"
+#include "BuildLogger.h"
+#include "FileSystemUtils.h"
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
 #include <filesystem>
+#include <thread>
+#include <chrono>
+#include <csignal>
 
 BuildSystem::BuildSystem(const ProjectConfig& config) : config_(config) {}
 
@@ -453,4 +459,168 @@ std::vector<Platform> BuildSystem::get_target_platforms() const {
     }
     
     return platforms;
+}
+
+// Global flag for daemon shutdown
+static volatile bool daemon_should_stop = false;
+
+// Signal handler for graceful shutdown
+static void daemon_signal_handler(int signal) {
+    (void)signal; // Unused parameter
+    daemon_should_stop = true;
+}
+
+E_RESULT BuildSystem::run_daemon_mode(int poll_interval_ms, const std::string& log_file) const {
+    std::cout << "--- Bodge Daemon Mode ---" << std::endl;
+    
+    // Check configuration validity
+    if (!config_.is_valid()) {
+        std::cerr << "[ERROR] Configuration is invalid. Please check your .bodge file." << std::endl;
+        return S_ERROR_INVALID_ARGUMENT;
+    }
+
+    // Initialize build logger
+    BuildLogger logger(log_file);
+    if (!logger.open()) {
+        std::cerr << "[ERROR] Failed to open log file: " << log_file << std::endl;
+        return S_FILE_OPERATION_FAILED;
+    }
+
+    std::cout << "[INFO] Build logs will be written to: " << log_file << std::endl;
+    logger.log_message("Daemon mode started");
+
+    // Collect all source files and directories to watch
+    std::vector<std::string> watch_paths;
+    
+    // Add global include directories
+    for (const std::string& dir : config_.global_include_dirs) {
+        if (FileSystemUtils::directory_exists(dir)) {
+            watch_paths.push_back(dir);
+        }
+    }
+    
+    // Add target-specific sources and includes
+    for (const auto& [name, target] : config_.targets) {
+        // Add source files
+        for (const std::string& source : target.sources) {
+            watch_paths.push_back(source);
+        }
+        
+        // Add include directories
+        for (const std::string& dir : target.include_dirs) {
+            if (FileSystemUtils::directory_exists(dir)) {
+                watch_paths.push_back(dir);
+            }
+        }
+        
+        // Add platform-specific sources
+        for (const auto& [platform, platform_config] : target.platform_configs) {
+            for (const std::string& source : platform_config.sources) {
+                watch_paths.push_back(source);
+            }
+        }
+    }
+
+    // Add legacy sources if present
+    for (const std::string& source : config_.sources) {
+        watch_paths.push_back(source);
+    }
+    
+    // Add legacy include directories
+    for (const std::string& dir : config_.include_dirs) {
+        if (FileSystemUtils::directory_exists(dir)) {
+            watch_paths.push_back(dir);
+        }
+    }
+
+    // If no specific paths, watch current directory
+    if (watch_paths.empty()) {
+        watch_paths.push_back(".");
+    }
+
+    // Initialize file watcher
+    FileWatcher watcher(watch_paths);
+    if (!watcher.initialize()) {
+        std::cerr << "[ERROR] Failed to initialize file watcher." << std::endl;
+        logger.log_error("Failed to initialize file watcher");
+        return S_FAILURE;
+    }
+
+    std::cout << "[INFO] Watching " << watcher.get_watched_files().size() << " file(s) for changes..." << std::endl;
+    std::cout << "[INFO] Poll interval: " << poll_interval_ms << " ms" << std::endl;
+    std::cout << "[INFO] Press Ctrl+C to stop daemon mode." << std::endl;
+
+    // Set up signal handler for graceful shutdown
+    std::signal(SIGINT, daemon_signal_handler);
+    std::signal(SIGTERM, daemon_signal_handler);
+
+    // Perform initial build
+    std::cout << std::endl << "[INFO] Performing initial build..." << std::endl;
+    logger.log_message("Performing initial build");
+    logger.log_build_start();
+    
+    auto start_time = std::chrono::steady_clock::now();
+    E_RESULT build_result = build();
+    auto end_time = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    
+    logger.log_build_end(build_result, duration);
+    
+    if (build_result == S_OK) {
+        std::cout << "[SUCCESS] Initial build completed successfully." << std::endl;
+    } else {
+        std::cerr << "[ERROR] Initial build failed. Continuing to watch for changes..." << std::endl;
+    }
+
+    // Main daemon loop
+    std::cout << std::endl << "[INFO] Daemon is now watching for file changes..." << std::endl;
+    
+    while (!daemon_should_stop) {
+        // Wait for the specified interval
+        std::this_thread::sleep_for(std::chrono::milliseconds(poll_interval_ms));
+
+        // Check for file changes
+        if (watcher.has_changes()) {
+            std::vector<std::string> changed_files = watcher.get_changed_files();
+            
+            std::cout << std::endl << "[CHANGE DETECTED] " << changed_files.size() 
+                      << " file(s) changed:" << std::endl;
+            logger.log_changed_files(changed_files);
+            
+            for (const std::string& file : changed_files) {
+                std::cout << "  - " << file << std::endl;
+            }
+
+            // Small delay to allow file writes to complete
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            // Trigger rebuild
+            std::cout << std::endl << "[INFO] Triggering rebuild..." << std::endl;
+            logger.log_build_start();
+            
+            start_time = std::chrono::steady_clock::now();
+            build_result = build();
+            end_time = std::chrono::steady_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+            
+            logger.log_build_end(build_result, duration);
+            
+            if (build_result == S_OK) {
+                std::cout << "[SUCCESS] Rebuild completed successfully." << std::endl;
+            } else {
+                std::cerr << "[ERROR] Rebuild failed. See log for details." << std::endl;
+            }
+
+            // Update file watcher state
+            watcher.update_state();
+            
+            std::cout << std::endl << "[INFO] Watching for file changes..." << std::endl;
+        }
+    }
+
+    // Daemon was interrupted
+    std::cout << std::endl << "[INFO] Daemon mode stopped." << std::endl;
+    logger.log_message("Daemon mode stopped by user");
+
+    return S_OK;
 }

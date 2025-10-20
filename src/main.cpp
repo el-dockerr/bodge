@@ -20,6 +20,8 @@ struct CommandLineArgs {
     Platform platform;
     bool platform_specified = false;
     bool arch_specified = false;
+    int poll_interval = 1000;  // Default poll interval for daemon mode (ms)
+    std::string log_file = "bodge_daemon.log";  // Default log file for daemon mode
 };
 
 // Function to parse command line arguments
@@ -44,6 +46,18 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
                 args.platform.architecture = arch;
                 args.arch_specified = true;
             }
+        } else if (arg.find("--interval=") == 0) {
+            std::string interval_str = arg.substr(11); // Remove "--interval="
+            try {
+                args.poll_interval = std::stoi(interval_str);
+                if (args.poll_interval < 100) {
+                    args.poll_interval = 100; // Minimum 100ms
+                }
+            } catch (...) {
+                std::cerr << "[WARNING] Invalid interval value, using default (1000ms)" << std::endl;
+            }
+        } else if (arg.find("--log=") == 0) {
+            args.log_file = arg.substr(6); // Remove "--log="
         } else if (arg.find("--") == 0) {
             // Skip other unknown options
             continue;
@@ -91,20 +105,26 @@ int main(int argc, char* argv[]) {
                           << "  build [target]     - Build specific target (default: all targets)" << std::endl
                           << "  fetch              - Fetch git dependencies only" << std::endl
                           << "  sequence [name]    - Execute specific sequence" << std::endl
+                          << "  watch              - Watch mode: automatically rebuild on file changes" << std::endl
+                          << "  daemon             - Alias for watch mode" << std::endl
                           << "  list               - List available targets and sequences" << std::endl
                           << "  platform           - Show current platform information" << std::endl
-                          << "  help               - Show this help message" << std::endl << std::endl
+                          << "  help               - Show this help message" << std::endl
                           << "  version            - Show version information" << std::endl << std::endl
                           << "Options:" << std::endl
                           << "  --platform=<platform>  - Build for specific platform" << std::endl
-                          << "  --arch=<arch>          - Build for specific architecture" << std::endl << std::endl
+                          << "  --arch=<arch>          - Build for specific architecture" << std::endl
+                          << "  --interval=<ms>        - Poll interval for watch mode (default: 1000ms)" << std::endl
+                          << "  --log=<file>           - Log file for watch mode (default: bodge_daemon.log)" << std::endl << std::endl
                           << "Examples:" << std::endl
                           << "  bodge                          # Build all targets for current platform" << std::endl
                           << "  bodge --platform=linux_x64    # Build all targets for Linux 64-bit" << std::endl
                           << "  bodge build mylib --arch=x86   # Build 'mylib' for 32-bit" << std::endl
                           << "  bodge build myapp --platform=windows_x64  # Build 'myapp' for Windows 64-bit" << std::endl
                           << "  bodge fetch                    # Fetch git dependencies" << std::endl
-                          << "  bodge sequence deploy          # Execute sequence 'deploy'" << std::endl;
+                          << "  bodge sequence deploy          # Execute sequence 'deploy'" << std::endl
+                          << "  bodge watch                    # Watch for file changes and auto-rebuild" << std::endl
+                          << "  bodge daemon --interval=2000   # Watch mode with 2s poll interval" << std::endl;
                 return 0;
             } else if (args.command == "version" || args.command == "--version" || args.command == "-v") {
                 std::cout << "Author: Swen \"El Dockerr\" Kalski" << std::endl
@@ -162,6 +182,9 @@ int main(int argc, char* argv[]) {
             } else if (args.command == "fetch") {
                 // Fetch git dependencies only
                 result = builder.build_git_dependencies_only();
+            } else if (args.command == "watch" || args.command == "daemon") {
+                // Run in daemon/watch mode
+                result = builder.run_daemon_mode(args.poll_interval, args.log_file);
             } else if (args.command == "build") {
                 if (!args.target_or_sequence.empty()) {
                     // Build specific target for specified platform

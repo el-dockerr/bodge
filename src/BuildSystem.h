@@ -53,6 +53,14 @@ public:
      */
     E_RESULT execute_sequence(const std::string& sequence_name) const;
 
+    /**
+     * @brief Runs the build system in daemon mode (watches for file changes)
+     * @param poll_interval_ms Interval in milliseconds between file checks (default: 1000ms)
+     * @param log_file Path to log file (default: "bodge_daemon.log")
+     * @return S_OK if daemon started successfully (runs indefinitely until interrupted)
+     */
+    E_RESULT run_daemon_mode(int poll_interval_ms = 1000, const std::string& log_file = "bodge_daemon.log") const;
+
 private:
     const ProjectConfig config_;
 

@@ -1,0 +1,65 @@
+# Example .bodge configuration for demonstrating daemon mode
+# This configuration shows a simple C++ project setup that works great with daemon mode
+
+name: DaemonExample
+compiler: g++
+
+# Global compiler flags
+global_cxx_flags:
+    - -std=c++17
+    - -Wall
+    - -Wextra
+    - -O2
+
+# Global include directories
+global_include_dirs:
+    - include
+    - src
+
+# Define a simple executable target
+targets:
+    hello:
+        type: exe
+        output_name: hello
+        sources:
+            - src/main.cpp
+            - src/utils.cpp
+        
+    math_lib:
+        type: shared
+        output_name: mathlib
+        sources:
+            - src/math/*.cpp
+        include_dirs:
+            - src/math
+
+# Example sequence for building and deploying
+sequences:
+    deploy:
+        - build hello
+        - build math_lib
+        - mkdir dist
+        - copy hello.exe dist/
+        - copy mathlib.dll dist/
+
+# To use daemon mode with this configuration:
+#
+# 1. Basic daemon mode:
+#    bodge watch
+#
+# 2. With custom polling interval (check every 2 seconds):
+#    bodge daemon --interval=2000
+#
+# 3. With custom log file:
+#    bodge watch --log=my_build.log
+#
+# 4. Combined options:
+#    bodge daemon --interval=3000 --log=dev_builds.log
+#
+# The daemon will watch all source files (main.cpp, utils.cpp, math/*.cpp)
+# and header files in the include directories. When any file changes,
+# it will automatically rebuild the affected targets.
+#
+# Build logs with timestamps, success/failure status, and build durations
+# will be written to bodge_daemon.log (or your custom log file).
+
