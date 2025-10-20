@@ -10,6 +10,7 @@
 #include "ConfigParser.h"
 #include "BuildSystem.h"
 #include "Architecture.h"
+#include "ProgressBar.h"
 #include "core.h"
 #include <iostream>
 
@@ -127,8 +128,9 @@ int main(int argc, char* argv[]) {
                           << "  bodge daemon --interval=2000   # Watch mode with 2s poll interval" << std::endl;
                 return 0;
             } else if (args.command == "version" || args.command == "--version" || args.command == "-v") {
-                std::cout << "Author: Swen \"El Dockerr\" Kalski" << std::endl
-                          << "Version: " << get_version() << std::endl;
+                ProgressBar::display_header();
+                ProgressBar::display_info("Author: Swen \"El Dockerr\" Kalski");
+                ProgressBar::display_info(std::string("Version: ") + get_version());
                 return 0;
             } else if (args.command == "platform") {
                 Platform current_platform = ArchitectureDetector::detect_current_platform();
@@ -144,7 +146,7 @@ int main(int argc, char* argv[]) {
                 }
                 return 0;
             } else if (args.command == "list") {
-                std::cout << "Available targets:" << std::endl;
+                ProgressBar::display_phase_header("Available Targets", "🎯");
                 for (const auto& [name, target] : project.targets) {
                     std::string type_str;
                     switch (target.type) {
@@ -152,7 +154,7 @@ int main(int argc, char* argv[]) {
                         case BuildType::SHARED_LIBRARY: type_str = "shared"; break;
                         case BuildType::STATIC_LIBRARY: type_str = "static"; break;
                     }
-                    std::cout << "  " << name << " (" << type_str << ")";
+                    std::cout << "  • " << name << " (" << type_str << ")";
                     
                     // Show target platforms if configured
                     if (!target.target_platforms.empty()) {
@@ -165,21 +167,22 @@ int main(int argc, char* argv[]) {
                     std::cout << std::endl;
                 }
 
-                std::cout << std::endl << "Available sequences:" << std::endl;
+                ProgressBar::display_phase_header("Available Sequences", "⚙️");
                 for (const auto& [name, seq] : project.sequences) {
-                    std::cout << "  " << name << " (" << seq.operations.size() << " operations)" << std::endl;
+                    std::cout << "  • " << name << " (" << seq.operations.size() << " operations)" << std::endl;
                 }
                 
                 // Show configured target platforms
                 if (!project.default_target_platforms.empty()) {
-                    std::cout << std::endl << "Default target platforms:" << std::endl;
+                    ProgressBar::display_phase_header("Default Target Platforms", "🖥️");
                     for (const Platform& platform : project.default_target_platforms) {
-                        std::cout << "  " << platform.to_string() << std::endl;
+                        std::cout << "  • " << platform.to_string() << std::endl;
                     }
                 }
                 
                 return 0;
             } else if (args.command == "fetch") {
+                ProgressBar::display_header();
                 // Fetch git dependencies only
                 result = builder.build_git_dependencies_only();
             } else if (args.command == "watch" || args.command == "daemon") {

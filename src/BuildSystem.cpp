@@ -3,6 +3,7 @@
 #include "FileWatcher.h"
 #include "BuildLogger.h"
 #include "FileSystemUtils.h"
+#include "ProgressBar.h"
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
@@ -14,23 +15,24 @@
 BuildSystem::BuildSystem(const ProjectConfig& config) : config_(config) {}
 
 E_RESULT BuildSystem::build() const {
-    std::cout << "--- Bodge: The Idiotic Build System ---" << std::endl;
+    ProgressBar::display_header();
 
     // Validate system support
     if (!validate_system_support()) {
-        std::cerr << "System command execution is not fully supported on this platform. " << std::endl
-                  << "Build may fail." << std::endl;
+        ProgressBar::display_warning("System command execution is not fully supported on this platform. Build may fail.");
     }
 
     // Check for essential inputs
     if (!config_.is_valid()) {
-        std::cerr << "[ERROR] Configuration is invalid. Please check your .bodge file." << std::endl;
+        ProgressBar::display_error("Configuration is invalid. Please check your .bodge file.");
         return S_ERROR_INVALID_ARGUMENT;
     }
 
+    auto build_start_time = std::chrono::steady_clock::now();
+
     // Handle git dependencies first
     if (build_git_dependencies() != S_OK) {
-        std::cerr << "[ERROR] Failed to handle git dependencies." << std::endl;
+        ProgressBar::display_error("Failed to handle git dependencies.");
         return S_BUILD_FAILED;
     }
 
@@ -39,25 +41,53 @@ E_RESULT BuildSystem::build() const {
         bool all_success = true;
         std::vector<Platform> target_platforms = get_target_platforms();
         
+        // Count total targets to build
+        int total_targets = 0;
         for (const Platform& platform : target_platforms) {
-            std::cout << std::endl << "[INFO] Building for platform: " << platform.to_string() << std::endl;
+            for (const auto& [name, target] : config_.targets) {
+                if (target.should_build_for_platform(platform)) {
+                    total_targets++;
+                }
+            }
+        }
+        
+        int current_target = 0;
+        ProgressBar overall_progress(total_targets, 50);
+        
+        for (const Platform& platform : target_platforms) {
+            ProgressBar::display_info("Building for platform: " + platform.to_string());
             
             for (const auto& [name, target] : config_.targets) {
                 if (target.should_build_for_platform(platform)) {
+                    current_target++;
+                    std::string prefix = "Overall progress (" + std::to_string(current_target) + "/" + std::to_string(total_targets) + ")";
+                    overall_progress.display(current_target, prefix);
+                    
                     if (build_target_for_platform(name, platform) != S_OK) {
                         all_success = false;
                     }
                 } else {
-                    std::cout << "[SKIP] Target '" << name << "' not configured for platform " << platform.to_string() << std::endl;
+                    ProgressBar::display_info("Skipping target '" + name + "' - not configured for platform " + platform.to_string());
                 }
             }
         }
+        
+        auto build_end_time = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(build_end_time - build_start_time).count();
+        
+        ProgressBar::display_build_summary(all_success, duration);
         return all_success ? S_OK : S_BUILD_FAILED;
     }
     
     // Legacy single build
     std::string command = generate_command();
-    return execute_command(command);
+    E_RESULT result = execute_command(command);
+    
+    auto build_end_time = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(build_end_time - build_start_time).count();
+    
+    ProgressBar::display_build_summary(result == S_OK, duration);
+    return result;
 }
 
 E_RESULT BuildSystem::build_git_dependencies_only() const {
@@ -92,17 +122,17 @@ std::string BuildSystem::generate_command() const {
 }
 
 E_RESULT BuildSystem::execute_command(const std::string& command) const {
-    std::cout << "\n[INFO] Executing command (The Idiot Way):" << std::endl << command  << std::endl;
+    ProgressBar::display_info("Executing build command...");
+    std::cout << command << std::endl;
 
     // Execute the command using the system shell
     int result = std::system(command.c_str());
 
     if (result == 0) {
-        std::cout << std::endl << "[SUCCESS] Project '" << config_.output_name << "' built successfully." << std::endl;
+        ProgressBar::display_success("Build completed successfully!");
         return S_OK;
     } else {
-        std::cerr << std::endl << "[ERROR] Bodge encountered an issue (Exit Code: " << result
-                  << "). Check the compiler output for details." << std::endl;
+        ProgressBar::display_error("Build failed with exit code: " + std::to_string(result));
         return S_COMMAND_EXECUTION_FAILED;
     }
 }
@@ -120,44 +150,62 @@ E_RESULT BuildSystem::build_target(const std::string& target_name) const {
 E_RESULT BuildSystem::build_target_for_platform(const std::string& target_name, const Platform& platform) const {
     auto it = config_.targets.find(target_name);
     if (it == config_.targets.end()) {
-        std::cerr << "[ERROR] Target '" << target_name << "' not found." << std::endl;
+        ProgressBar::display_error("Target '" + target_name + "' not found.");
         return S_TARGET_NOT_FOUND;
     }
     
     const BuildTarget& target = it->second;
     if (!target.is_valid()) {
-        std::cerr << "[ERROR] Target '" << target_name << "' is invalid." << std::endl;
+        ProgressBar::display_error("Target '" + target_name + "' is invalid.");
         return S_INVALID_CONFIGURATION;
     }
 
     if (!target.should_build_for_platform(platform)) {
-        std::cout << "[SKIP] Target '" << target_name << "' not configured for platform " << platform.to_string() << std::endl;
+        ProgressBar::display_info("Skipping target '" + target_name + "' - not configured for platform " + platform.to_string());
         return S_OK;
     }
 
-    std::cout << std::endl << "[INFO] Building target: " << target_name << " for platform: " << platform.to_string() << std::endl;
+    ProgressBar::display_phase_header("Building: " + target_name + " (" + platform.to_string() + ")", "🔨");
+    
+    auto build_start = std::chrono::steady_clock::now();
     std::string command = generate_target_command_for_platform(target, platform);
-    return execute_command(command);
+    E_RESULT result = execute_command(command);
+    auto build_end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(build_end - build_start).count();
+    
+    if (result == S_OK) {
+        ProgressBar::display_success("Target '" + target_name + "' built in " + std::to_string(duration) + "ms");
+    }
+    
+    return result;
 }
 
 E_RESULT BuildSystem::execute_sequence(const std::string& sequence_name) const {
     auto it = config_.sequences.find(sequence_name);
     if (it == config_.sequences.end()) {
-        std::cerr << "[ERROR] Sequence '" << sequence_name << "' not found." << std::endl;
+        ProgressBar::display_error("Sequence '" + sequence_name + "' not found.");
         return S_ERROR_RESOURCE_NOT_FOUND;
     }
     
     const Sequence& sequence = it->second;
-    std::cout << std::endl << "[INFO] Executing sequence: " << sequence_name << std::endl;
+    ProgressBar::display_phase_header("Executing Sequence: " + sequence_name, "⚙️");
+    
+    int total_ops = sequence.operations.size();
+    ProgressBar seq_progress(total_ops, 50);
+    int current_op = 0;
     
     for (const Operation& op : sequence.operations) {
+        seq_progress.display(current_op, "Sequence progress");
+        current_op++;
+        
         if (execute_operation(op) != S_OK) {
-            std::cerr << "[ERROR] Sequence '" << sequence_name << "' failed." << std::endl;
+            ProgressBar::display_error("Sequence '" + sequence_name + "' failed at operation " + std::to_string(current_op));
             return S_FAILURE;
         }
     }
     
-    std::cout << "[SUCCESS] Sequence '" << sequence_name << "' completed successfully." << std::endl;
+    seq_progress.display(total_ops, "Sequence progress");
+    ProgressBar::display_success("Sequence '" + sequence_name + "' completed successfully!");
     return S_OK;
 }
 
@@ -224,24 +272,31 @@ E_RESULT BuildSystem::build_git_dependencies() const {
         return S_OK; // No dependencies to handle
     }
     if (config_.dependencies_url.size() != config_.dependencies_path.size()) {
-        std::cerr << "[ERROR] Mismatch between number of dependency git URLs and git paths." << std::endl;
+        ProgressBar::display_error("Mismatch between number of dependency git URLs and git paths.");
         return S_ERROR_INVALID_ARGUMENT;
     }
 
+    ProgressBar::display_phase_header("Fetching Dependencies", "📦");
+    
     Git git;
     int i = 0;
+    int total_deps = config_.dependencies_url.size();
+    ProgressBar dep_progress(total_deps, 50);
     
     for (const auto& url : config_.dependencies_url) {
-        std::cout << "[INFO] Cloning dependency from " << url << std::endl;
+        std::string short_url = url.length() > 50 ? url.substr(0, 47) + "..." : url;
+        ProgressBar::display_info("Fetching: " + short_url);
+        dep_progress.display(i, "Dependencies");
+        
         try {
             E_RESULT res = git.manage_git_repository(url, config_.dependencies_path[i]);
             if (res != S_OK) {
-                std::cerr << "[ERROR] Failed to clone " << url << std::endl;
+                ProgressBar::display_error("Failed to clone " + url);
                 return S_FAILURE;
             } else if (res == S_OK) {
-                std::cout << "[SUCCESS] Cloned " << url << std::endl;
+                ProgressBar::display_success("Fetched " + short_url);
                 if (!config_.run_bodge_after_clone.empty()) {
-                    std::cout << "[INFO] Running post-clone command: " << config_.run_bodge_after_clone << std::endl;
+                    ProgressBar::display_info("Running post-clone command: " + config_.run_bodge_after_clone);
                     if (config_.run_bodge_after_clone == "true") {
                         // Save current directory
                         std::filesystem::path original_path = std::filesystem::current_path();
@@ -251,9 +306,9 @@ E_RESULT BuildSystem::build_git_dependencies() const {
                             std::filesystem::current_path(config_.dependencies_path[i]);
                             
                             // Run bodge in the repository directory
-                            std::cout << "[INFO] Running bodge in " << config_.dependencies_path[i] << std::endl;
+                            ProgressBar::display_info("Running bodge in " + config_.dependencies_path[i]);
                             if (std::system("bodge") != 0) {
-                                std::cerr << "[ERROR] Post-clone bodge command failed." << std::endl;
+                                ProgressBar::display_error("Post-clone bodge command failed.");
                                 // Restore original directory before returning
                                 std::filesystem::current_path(original_path);
                                 return S_COMMAND_EXECUTION_FAILED;
@@ -261,9 +316,9 @@ E_RESULT BuildSystem::build_git_dependencies() const {
                             
                             // Restore original directory
                             std::filesystem::current_path(original_path);
-                            std::cout << "[SUCCESS] Post-clone bodge command completed." << std::endl;
+                            ProgressBar::display_success("Post-clone bodge command completed.");
                         } catch (const std::filesystem::filesystem_error& e) {
-                            std::cerr << "[ERROR] Failed to change directory: " << e.what() << std::endl;
+                            ProgressBar::display_error("Failed to change directory: " + std::string(e.what()));
                             // Attempt to restore original directory
                             try {
                                 std::filesystem::current_path(original_path);
@@ -274,14 +329,17 @@ E_RESULT BuildSystem::build_git_dependencies() const {
                 }
                 i++;
             } else {
-                std::cerr << "[ERROR] Failed to clone " << url << std::endl;
+                ProgressBar::display_error("Failed to clone " + url);
                 return S_FAILURE;
             }
         } catch (const std::exception& e) {
-            std::cerr << "[ERROR] Exception during git operation: " << e.what() << std::endl;
+            ProgressBar::display_error("Exception during git operation: " + std::string(e.what()));
             return S_FAILURE;
         }
     }
+    
+    dep_progress.display(total_deps, "Dependencies");
+    ProgressBar::display_success("All dependencies fetched successfully!");
     return S_OK;
 }
 
@@ -300,7 +358,7 @@ E_RESULT BuildSystem::execute_operation(const Operation& operation) const {
 }
 
 E_RESULT BuildSystem::copy_file_or_directory(const std::string& source, const std::string& destination) const {
-    std::cout << "[INFO] Copying " << source << " -> " << destination << std::endl;
+    ProgressBar::display_info("Copying " + source + " -> " + destination);
     
     try {
         std::filesystem::path src_path(source);
@@ -317,50 +375,50 @@ E_RESULT BuildSystem::copy_file_or_directory(const std::string& source, const st
                 std::filesystem::copy_options::overwrite_existing);
         }
         
-        std::cout << "[SUCCESS] Copy completed." << std::endl;
+        ProgressBar::display_success("Copy completed.");
         return S_OK;
     } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "[ERROR] Copy failed: " << e.what() << std::endl;
+        ProgressBar::display_error("Copy failed: " + std::string(e.what()));
         return S_COMMAND_EXECUTION_FAILED;
     }
 }
 
 E_RESULT BuildSystem::remove_file_or_directory(const std::string& path) const {
-    std::cout << "[INFO] Removing " << path << std::endl;
+    ProgressBar::display_info("Removing " + path);
     
     try {
         std::filesystem::path fs_path(path);
         std::uintmax_t removed_count = std::filesystem::remove_all(fs_path);
         
         if (removed_count > 0) {
-            std::cout << "[SUCCESS] Removed " << removed_count << " item(s)." << std::endl;
+            ProgressBar::display_success("Removed " + std::to_string(removed_count) + " item(s).");
         } else {
-            std::cout << "[INFO] Nothing to remove (path doesn't exist)." << std::endl;
+            ProgressBar::display_info("Nothing to remove (path doesn't exist).");
         }
 
         return S_OK;
     } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "[ERROR] Remove failed: " << e.what() << std::endl;
+        ProgressBar::display_error("Remove failed: " + std::string(e.what()));
         return S_COMMAND_EXECUTION_FAILED;
     }
 }
 
 E_RESULT BuildSystem::create_directory(const std::string& path) const {
-    std::cout << "[INFO] Creating directory " << path << std::endl;
+    ProgressBar::display_info("Creating directory " + path);
     
     try {
         std::filesystem::path fs_path(path);
         bool created = std::filesystem::create_directories(fs_path);
         
         if (created) {
-            std::cout << "[SUCCESS] Directory created." << std::endl;
+            ProgressBar::display_success("Directory created.");
         } else {
-            std::cout << "[INFO] Directory already exists." << std::endl;
+            ProgressBar::display_info("Directory already exists.");
         }
 
         return S_OK;
     } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "[ERROR] Directory creation failed: " << e.what() << std::endl;
+        ProgressBar::display_error("Directory creation failed: " + std::string(e.what()));
         return S_COMMAND_EXECUTION_FAILED;
     }
 }
