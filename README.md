@@ -263,4 +263,12 @@ app@linux_x64.output_suffix: _linux64
 
 ## License
 
-Bodge License (BL-V1.0)
+Bodge License (BL-V2.0)
+
+**Free for personal use, students, and open source!**  
+
+- 🆓 **Personal & Open Source**: Completely free forever
+- 💼 **Commercial Use**: Simple, transparent pricing starting at €14/user/year or Sponsoring
+- 📋 [Read Full License](LICENSE)
+
+**Using Bodge at work? [Get your commercial license here!](mailto:kalski.swen@gmail.com?subject=Bodge%20Commercial%20License%20Inquiry)**

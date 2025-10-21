@@ -1,0 +1,391 @@
+BODGE BUILD SYSTEM - DUAL LICENSE AGREEMENT
+Version 2.0 - October 2025
+
+Copyright (c) 2025 Swen Kalski (aka "El Dockerr")
+All rights reserved.
+
+================================================================================
+IMPORTANT LEGAL NOTICE
+================================================================================
+
+This software is provided under a DUAL LICENSE model:
+- FREE for personal, educational, and open-source use
+- COMMERCIAL LICENSE REQUIRED for business use
+
+Unauthorized commercial use will result in retroactive licensing fees 
+calculated from first use or Version 1.0, whichever comes first.
+
+================================================================================
+PART 1: DEFINITIONS
+================================================================================
+
+1.1. "Software" means the Bodge Build System, including all source code,
+     binaries, documentation, examples, and associated materials.
+
+1.2. "Licensor" means Swen Kalski (El Dockerr) and any authorized 
+     representatives.
+
+1.3. "Licensee" means any individual or entity using the Software.
+
+1.4. "Personal Use" means use by an individual for non-commercial, 
+     non-professional purposes, including learning, hobby projects, 
+     and personal development.
+
+1.5. "Commercial Entity" means any business, corporation, partnership, 
+     limited liability company, sole proprietorship, or any organization 
+     operating for profit or generating revenue, regardless of size.
+
+1.6. "Commercial Use" means any use of the Software by a Commercial Entity,
+     including but not limited to:
+     - Building commercial products or services
+     - Internal business operations and development
+     - Professional software development activities
+     - Any use that directly or indirectly generates revenue
+     - Use by employees, contractors, or agents of a Commercial Entity
+
+1.7. "User" means any individual person who uses or accesses the Software,
+     directly or indirectly, within a Commercial Entity.
+
+1.8. "Annual License Fee" means 14 Euro (€14) per User per calendar year.
+
+1.9. "Retroactive Period" means the time period from the first use of the
+     Software (or Version 1.0 release date, whichever is later) until a
+     valid Commercial License is obtained.
+
+================================================================================
+PART 2: FREE LICENSE (PERSONAL, EDUCATIONAL, AND OPEN SOURCE)
+================================================================================
+
+2.1. GRANT OF FREE LICENSE
+
+Subject to the terms and conditions of this License, Licensor hereby grants
+Licensee a worldwide, royalty-free, non-exclusive, non-transferable license
+to use, copy, modify, and distribute the Software, PROVIDED THAT the
+Licensee qualifies under one of the following categories:
+
+A. PERSONAL USE
+   - Individual persons using the Software for personal, non-professional,
+     non-commercial purposes
+   - Hobby projects and personal learning
+   - Personal portfolio projects not generating revenue
+
+B. EDUCATIONAL USE
+   - Accredited educational institutions (schools, universities, colleges)
+   - Students using the Software for coursework and learning
+   - Educational non-profit organizations
+   - Academic research projects
+
+C. OPEN SOURCE PROJECTS
+   - Projects distributed under an OSI-approved open source license
+   - Non-commercial open source development
+   - Community-driven free software projects
+
+D. NON-PROFIT ORGANIZATIONS
+   - Legally registered non-profit organizations (501(c)(3) or equivalent)
+   - Charitable organizations with tax-exempt status
+   - NGOs operating without profit motive
+
+2.2. FREE LICENSE RESTRICTIONS
+
+This free license DOES NOT permit:
+- Use by any Commercial Entity
+- Use in professional or business capacity
+- Use that generates or supports revenue generation
+- Use by employees during work hours for business purposes
+- Bundling with commercial products or services
+
+================================================================================
+PART 3: COMMERCIAL LICENSE REQUIREMENTS
+================================================================================
+
+3.1. MANDATORY COMMERCIAL LICENSE
+
+Any Commercial Entity using the Software MUST obtain a valid Commercial
+License from the Licensor BEFORE any use. This requirement applies
+regardless of:
+- Company size or revenue
+- Number of users
+- Type of use (internal or external)
+- Geographic location
+- Whether the Software is modified
+
+3.2. COMMERCIAL LICENSE TERMS
+
+A. LICENSE FEE
+   - Annual fee: 14 Euro (€14) per User per calendar year
+   - Minimum license: 1 User
+   - Payment due annually in advance
+   - Prices valid as of October 2025; subject to change with 90 days notice
+
+B. WHAT'S INCLUDED
+   - Right to use Software for commercial purposes
+   - Access to all updates and bug fixes during license period
+   - Email support for critical issues
+   - Right to modify and customize for internal use
+
+C. WHAT'S NOT INCLUDED (requires separate agreement)
+   - Redistribution rights
+   - Reselling or sublicensing rights
+   - White-labeling rights
+   - Source code distribution rights
+
+3.3. BUG REPORTING OBLIGATION
+
+Commercial Licensees MUST report all discovered bugs, security
+vulnerabilities, and critical issues to the Licensor within 14 business
+days of discovery. Failure to report constitutes a material breach of the
+Commercial License and may result in:
+- License termination
+- Retroactive fee assessment
+- Legal action for damages
+
+Bug reports must include:
+- Description of the bug
+- Steps to reproduce
+- System environment details
+- Impact assessment
+
+Reporting channel: kalski.swen@gmail.com
+
+3.4. AUDIT RIGHTS
+
+The Licensor reserves the right to audit Commercial Entity's use of the
+Software with 30 days written notice. Commercial Entity must provide:
+- Number of active Users
+- Deployment environments
+- Use case descriptions
+- License compliance documentation
+
+================================================================================
+PART 4: ENFORCEMENT AND RETROACTIVE FEES
+================================================================================
+
+4.1. UNAUTHORIZED COMMERCIAL USE
+
+If a Commercial Entity uses the Software without a valid Commercial License,
+the Licensor may:
+
+A. Calculate and demand payment for RETROACTIVE LICENSE FEES covering:
+   - The entire period from FIRST USE of the Software, OR
+   - From the release date of Version 1.0, whichever is LATER
+   - At the CURRENT license fee rate (€14 per User per year)
+   - Plus interest at 8% per annum
+
+B. Add penalty fees:
+   - 100% penalty on retroactive fees for willful non-compliance
+   - Additional damages for each month of unauthorized use
+
+C. Seek legal remedies including:
+   - Injunctive relief
+   - Actual damages
+   - Statutory damages
+   - Attorney's fees and court costs
+   - Reputational damages
+
+4.2. DETECTION AND EVIDENCE
+
+The following constitute evidence of Commercial Use:
+- Public statements or documentation
+- Job postings mentioning the Software
+- Employee testimonials or social media posts
+- Technical blog posts or conference presentations
+- Code repositories showing commercial use
+- Third-party reports from employees, contractors, or competitors
+- Audit findings
+
+4.3. COMPLIANCE DEADLINE
+
+Upon discovery of unauthorized use, Commercial Entity has 30 days to:
+1. Obtain a valid Commercial License
+2. Pay all retroactive fees and penalties
+3. Provide complete usage documentation
+4. Implement compliance measures
+
+Failure to comply results in immediate legal action.
+
+================================================================================
+PART 5: SPONSORSHIP ALTERNATIVE
+================================================================================
+
+5.1. SPONSORSHIP IN LIEU OF LICENSE
+
+Commercial Entities may opt for a SPONSORSHIP arrangement instead of
+standard licensing. Sponsorship must provide equal or greater value to
+the Licensor and may include:
+
+A. FINANCIAL SPONSORSHIP
+   - Annual sponsorship fee (negotiated, minimum €14 per User)
+   - Multi-year commitments receive discounts
+   - Public acknowledgment as sponsor
+
+B. IN-KIND SPONSORSHIP
+   - Development contributions (code, features, testing)
+   - Infrastructure support (hosting, CI/CD, tools)
+   - Marketing and promotion support
+   - Community building and support
+
+C. PARTNERSHIP SPONSORSHIP
+   - Strategic partnerships
+   - Co-development agreements
+   - Revenue sharing arrangements
+   - Custom enterprise agreements
+
+5.2. SPONSORSHIP BENEFITS
+
+Sponsors receive:
+- All Commercial License rights
+- Public recognition on project website
+- Logo placement in documentation
+- Priority support
+- Input on roadmap and features
+- Early access to new releases
+
+5.3. SPONSORSHIP TERMS
+
+Sponsorships must be:
+- Formalized in written agreement
+- Renewed annually (or per agreed term)
+- Subject to compliance with all license terms
+- Approved by Licensor
+
+================================================================================
+PART 6: MODIFICATION AND REDISTRIBUTION
+================================================================================
+
+6.1. ATTRIBUTION
+
+All copies or substantial portions of the Software must include:
+- Original copyright notice
+- This license text
+- Attribution to Swen Kalski (El Dockerr)
+- Link to original repository
+
+6.2. DERIVATIVE WORKS
+
+- Free License users may create derivatives for personal use only
+- Commercial License does NOT grant redistribution rights
+- Derivative works for commercial purposes require separate agreement
+- All derivatives must maintain this license
+
+6.3. NO SUBLICENSING
+
+Licensee may NOT:
+- Sublicense the Software to third parties
+- Transfer license rights without written consent
+- Create competing products based on the Software
+- Remove or obscure license information
+
+================================================================================
+PART 7: PRICING AND PAYMENT
+================================================================================
+
+7.1. STANDARD COMMERCIAL PRICING
+
+Base Rate: 14 Euro (€14) per User per year
+
+User Tiers:
+- 1-10 Users:    €14 per User per year
+- 11-50 Users:   €12 per User per year (14% discount)
+- 51-100 Users:  €10 per User per year (29% discount)
+- 101-500 Users: €8 per User per year (43% discount)
+- 500+ Users:    Custom pricing (contact licensor)
+
+7.2. PAYMENT TERMS
+
+- Payment due within 30 days of invoice
+- Annual billing in advance
+- Accepted payment methods: Bank transfer, PayPal, Stripe
+- Currency: Euro (EUR)
+- Late payment fee: 2% per month
+- Overdue invoices: License suspension after 60 days
+
+7.3. USAGE CALCULATION
+
+"User" is calculated as:
+- Direct users (developers using Bodge)
+- Indirect users (whose work depends on Bodge builds - CI/CD)
+- Maximum concurrent users in any 30-day period
+- Includes employees, contractors, and temporary staff
+
+7.4. PRICE ADJUSTMENTS
+
+- Prices may increase with 90 days written notice
+- Existing licensees: Current rate honored for 12 months
+- Inflation adjustment: Maximum 5% per year
+- Currency fluctuations: Rates in other currencies adjusted quarterly
+
+================================================================================
+PART 8: WARRANTY DISCLAIMER AND LIABILITY
+================================================================================
+
+8.1. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+8.2. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY, WHETHER IN CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF,
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Maximum liability is limited to fees paid in the 12 months preceding the claim.
+
+8.3. INDEMNIFICATION
+
+Commercial Licensees agree to indemnify and hold harmless the Licensor from
+any claims arising from Licensee's use of the Software.
+
+================================================================================
+PART 9: GENERAL PROVISIONS
+================================================================================
+
+9.1. GOVERNING LAW
+
+This License shall be governed by the laws of Malta, without regard to
+conflict of law provisions. Exclusive jurisdiction: Courts of Malta.
+
+9.2. SEVERABILITY
+
+If any provision is found unenforceable, remaining provisions remain in
+full force and effect.
+
+9.3. ENTIRE AGREEMENT
+
+This License constitutes the entire agreement between parties regarding
+the Software and supersedes all prior agreements.
+
+9.4. AMENDMENTS
+
+Licensor may update this License with 90 days notice. Continued use after
+notice period constitutes acceptance.
+
+9.5. CONTACT FOR COMMERCIAL LICENSING
+
+Swen Kalski (El Dockerr)
+Email: kalski.swen@gmail.com
+Subject line: "Bodge Commercial License Inquiry"
+
+================================================================================
+PART 10: ACCEPTANCE
+================================================================================
+
+BY DOWNLOADING, INSTALLING, COPYING, OR OTHERWISE USING THE SOFTWARE, YOU
+ACKNOWLEDGE THAT YOU HAVE READ THIS LICENSE, UNDERSTAND IT, AND AGREE TO
+BE BOUND BY ITS TERMS AND CONDITIONS.
+
+IF YOU ARE USING THE SOFTWARE ON BEHALF OF A COMMERCIAL ENTITY, YOU
+REPRESENT THAT YOU HAVE THE AUTHORITY TO BIND THAT ENTITY TO THIS LICENSE.
+
+IF YOU DO NOT AGREE TO THESE TERMS, DO NOT USE THE SOFTWARE.
+
+================================================================================
+
+Version 2.0 - Effective October 21, 2025
+Copyright (c) 2025 Swen Kalski. All rights reserved.
+
+For questions or commercial licensing inquiries:
+Email: kalski.swen@gmail.com
+
