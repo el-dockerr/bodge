@@ -4,7 +4,7 @@
  * 
  * Author: Swen "El Dockerr" Kalski
  * Email: kalski.swen@gmail.com
- * License: GNU General Public License v3.0
+ * License: Bodge License (BL-V1.0)
  */
 
 #include "ConfigParser.h"
