@@ -16,6 +16,9 @@ add_executable(bodge
     src/git.cpp
     src/FileSystemUtils.cpp
     src/Architecture.cpp
+    src/FileWatcher.cpp
+    src/BuildLogger.cpp
+    src/ProgressBar.cpp
 )
 
 # Include directories

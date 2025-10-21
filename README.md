@@ -14,6 +14,11 @@ and add them to the build chain. Other features will be added step by step.
 
 The major goal is to have one little program what makes the build of C++ software easy like maven in Java or Cargo in Rust.
 
+## Screenshot
+
+![CLI Demo](./docs/cli_demo.png)
+
+
 
 ## Download
 
@@ -87,6 +92,13 @@ g++ -std=c++17 -Wall -Wextra -Isrc src/*.cpp -o bodge
 - Safe file/directory removal
 - Directory creation with parent path handling
 
+### **Daemon Mode - Automatic Rebuilds**
+- Watch mode that monitors source files for changes
+- Automatically triggers rebuilds when files are modified
+- Comprehensive build logging with timestamps and error tracking
+- Configurable polling intervals
+- Perfect for active development and continuous integration
+
 ### **fetch sources from other repositories**
 - No hassle about fetch and pull
 - Dependencies can setup fluently
@@ -127,6 +139,8 @@ Create a `.bodge` configuration file and run:
 ./bodge sequence deploy           # Execute specific sequence
 ./bodge platform                  # Show platform information
 ./bodge --platform=windows_x64    # Build only for this platform
+./bodge watch                     # Watch mode: auto-rebuild on file changes
+./bodge daemon --interval=2000    # Daemon with custom polling interval
 ./bodge --arch=x86                # Build only for targets from architecture x86
 ```
 

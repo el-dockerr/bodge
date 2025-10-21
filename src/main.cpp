@@ -10,6 +10,7 @@
 #include "ConfigParser.h"
 #include "BuildSystem.h"
 #include "Architecture.h"
+#include "ProgressBar.h"
 #include "core.h"
 #include <iostream>
 
@@ -20,6 +21,8 @@ struct CommandLineArgs {
     Platform platform;
     bool platform_specified = false;
     bool arch_specified = false;
+    int poll_interval = 1000;  // Default poll interval for daemon mode (ms)
+    std::string log_file = "bodge_daemon.log";  // Default log file for daemon mode
 };
 
 // Function to parse command line arguments
@@ -44,6 +47,18 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
                 args.platform.architecture = arch;
                 args.arch_specified = true;
             }
+        } else if (arg.find("--interval=") == 0) {
+            std::string interval_str = arg.substr(11); // Remove "--interval="
+            try {
+                args.poll_interval = std::stoi(interval_str);
+                if (args.poll_interval < 100) {
+                    args.poll_interval = 100; // Minimum 100ms
+                }
+            } catch (...) {
+                std::cerr << "[WARNING] Invalid interval value, using default (1000ms)" << std::endl;
+            }
+        } else if (arg.find("--log=") == 0) {
+            args.log_file = arg.substr(6); // Remove "--log="
         } else if (arg.find("--") == 0) {
             // Skip other unknown options
             continue;
@@ -57,21 +72,14 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
     return args;
 }
 
+void projectLoadError() {
+    std::cerr << "[FATAL] Configuration is critically incomplete. "
+    << "Please ensure required fields are set in .bodge." 
+    << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     try {
-        // Load configuration from the file (defaults to .bodge)
-        ProjectConfig project = ConfigParser::load_project_config(".bodge");
-
-        // Fatal check if essential information is missing after loading
-        if (!project.is_valid()) {
-            std::cerr << "[FATAL] Configuration is critically incomplete. "
-                      << "Please ensure required fields are set in .bodge." 
-                      << std::endl;
-            return 1;
-        }
-
-        // Create build system
-        BuildSystem builder(project);
         E_RESULT result;
 
         // Parse command line arguments
@@ -91,24 +99,31 @@ int main(int argc, char* argv[]) {
                           << "  build [target]     - Build specific target (default: all targets)" << std::endl
                           << "  fetch              - Fetch git dependencies only" << std::endl
                           << "  sequence [name]    - Execute specific sequence" << std::endl
+                          << "  watch              - Watch mode: automatically rebuild on file changes" << std::endl
+                          << "  daemon             - Alias for watch mode" << std::endl
                           << "  list               - List available targets and sequences" << std::endl
                           << "  platform           - Show current platform information" << std::endl
-                          << "  help               - Show this help message" << std::endl << std::endl
+                          << "  help               - Show this help message" << std::endl
                           << "  version            - Show version information" << std::endl << std::endl
                           << "Options:" << std::endl
                           << "  --platform=<platform>  - Build for specific platform" << std::endl
-                          << "  --arch=<arch>          - Build for specific architecture" << std::endl << std::endl
+                          << "  --arch=<arch>          - Build for specific architecture" << std::endl
+                          << "  --interval=<ms>        - Poll interval for watch mode (default: 1000ms)" << std::endl
+                          << "  --log=<file>           - Log file for watch mode (default: bodge_daemon.log)" << std::endl << std::endl
                           << "Examples:" << std::endl
                           << "  bodge                          # Build all targets for current platform" << std::endl
                           << "  bodge --platform=linux_x64    # Build all targets for Linux 64-bit" << std::endl
                           << "  bodge build mylib --arch=x86   # Build 'mylib' for 32-bit" << std::endl
                           << "  bodge build myapp --platform=windows_x64  # Build 'myapp' for Windows 64-bit" << std::endl
                           << "  bodge fetch                    # Fetch git dependencies" << std::endl
-                          << "  bodge sequence deploy          # Execute sequence 'deploy'" << std::endl;
+                          << "  bodge sequence deploy          # Execute sequence 'deploy'" << std::endl
+                          << "  bodge watch                    # Watch for file changes and auto-rebuild" << std::endl
+                          << "  bodge daemon --interval=2000   # Watch mode with 2s poll interval" << std::endl;
                 return 0;
             } else if (args.command == "version" || args.command == "--version" || args.command == "-v") {
-                std::cout << "Author: Swen \"El Dockerr\" Kalski" << std::endl
-                          << "Version: " << get_version() << std::endl;
+                ProgressBar::display_header();
+                ProgressBar::display_info("Author: Swen \"El Dockerr\" Kalski");
+                ProgressBar::display_info(std::string("Version: ") + get_version());
                 return 0;
             } else if (args.command == "platform") {
                 Platform current_platform = ArchitectureDetector::detect_current_platform();
@@ -124,7 +139,18 @@ int main(int argc, char* argv[]) {
                 }
                 return 0;
             } else if (args.command == "list") {
-                std::cout << "Available targets:" << std::endl;
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
+                ProgressBar::display_phase_header("Available Targets", "🎯");
                 for (const auto& [name, target] : project.targets) {
                     std::string type_str;
                     switch (target.type) {
@@ -132,7 +158,7 @@ int main(int argc, char* argv[]) {
                         case BuildType::SHARED_LIBRARY: type_str = "shared"; break;
                         case BuildType::STATIC_LIBRARY: type_str = "static"; break;
                     }
-                    std::cout << "  " << name << " (" << type_str << ")";
+                    std::cout << "  • " << name << " (" << type_str << ")";
                     
                     // Show target platforms if configured
                     if (!target.target_platforms.empty()) {
@@ -145,24 +171,61 @@ int main(int argc, char* argv[]) {
                     std::cout << std::endl;
                 }
 
-                std::cout << std::endl << "Available sequences:" << std::endl;
+                ProgressBar::display_phase_header("Available Sequences", "⚙️");
                 for (const auto& [name, seq] : project.sequences) {
-                    std::cout << "  " << name << " (" << seq.operations.size() << " operations)" << std::endl;
+                    std::cout << "  • " << name << " (" << seq.operations.size() << " operations)" << std::endl;
                 }
                 
                 // Show configured target platforms
                 if (!project.default_target_platforms.empty()) {
-                    std::cout << std::endl << "Default target platforms:" << std::endl;
+                    ProgressBar::display_phase_header("Default Target Platforms", "🖥️");
                     for (const Platform& platform : project.default_target_platforms) {
-                        std::cout << "  " << platform.to_string() << std::endl;
+                        std::cout << "  • " << platform.to_string() << std::endl;
                     }
                 }
                 
                 return 0;
             } else if (args.command == "fetch") {
+                ProgressBar::display_header();
                 // Fetch git dependencies only
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 result = builder.build_git_dependencies_only();
+            } else if (args.command == "watch" || args.command == "daemon") {
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
+                // Run in daemon/watch mode
+                result = builder.run_daemon_mode(args.poll_interval, args.log_file);
             } else if (args.command == "build") {
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 if (!args.target_or_sequence.empty()) {
                     // Build specific target for specified platform
                     result = builder.build_target_for_platform(args.target_or_sequence, args.platform);
@@ -186,6 +249,17 @@ int main(int argc, char* argv[]) {
                 }
             } else if (args.command == "sequence") {
                 if (!args.target_or_sequence.empty()) {
+                    // Load configuration from the file (defaults to .bodge)
+                    ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                    // Fatal check if essential information is missing after loading
+                    if (!project.is_valid()) {
+                        projectLoadError();
+                        return 1;
+                    }
+
+                    // Create build system
+                    BuildSystem builder(project);
                     // Execute specific sequence
                     result = builder.execute_sequence(args.target_or_sequence);
                 } else {
@@ -202,7 +276,17 @@ int main(int argc, char* argv[]) {
             if (args.platform_specified || args.arch_specified) {
                 std::cout << "Bodge - The Idiotic Build System" << std::endl;
                 std::cout << "Target platform: " << args.platform.to_string() << std::endl << std::endl;
-                
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 // Build all targets for the specified platform
                 bool all_success = true;
                 for (const auto& [name, target] : project.targets) {
@@ -214,6 +298,17 @@ int main(int argc, char* argv[]) {
                 }
                 result = all_success ? S_OK : S_BUILD_FAILED;
             } else {
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 result = builder.build();
             }
         }

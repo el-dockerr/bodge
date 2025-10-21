@@ -62,6 +62,7 @@ bodge version      # Version
 | [Getting Started](getting-started) | Installation and first steps |
 | [Configuration Reference](configuration) | Complete `.bodge` file reference |  
 | [Automatic Source Collection](automatic-source-collection) | Using `src/**` patterns for automatic file discovery |
+| [Daemon Mode](daemon-mode) | Automatic rebuilds and file watching |
 | [Examples](examples) | Real-world usage examples |
 | [Contributing Guide](contributing) | How to contribute |
 
