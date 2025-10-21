@@ -26,7 +26,7 @@ Pre-compiled binaries are available in [Releases](https://github.com/el-dockerr/
 
 ## Building the Project
 
-### Using bodge (preferred from know)
+### Using bodge (preferred)
 ```bash
 bodge --platform=windows_x86
 ```
