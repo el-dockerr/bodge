@@ -72,21 +72,14 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
     return args;
 }
 
+void projectLoadError() {
+    std::cerr << "[FATAL] Configuration is critically incomplete. "
+    << "Please ensure required fields are set in .bodge." 
+    << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     try {
-        // Load configuration from the file (defaults to .bodge)
-        ProjectConfig project = ConfigParser::load_project_config(".bodge");
-
-        // Fatal check if essential information is missing after loading
-        if (!project.is_valid()) {
-            std::cerr << "[FATAL] Configuration is critically incomplete. "
-                      << "Please ensure required fields are set in .bodge." 
-                      << std::endl;
-            return 1;
-        }
-
-        // Create build system
-        BuildSystem builder(project);
         E_RESULT result;
 
         // Parse command line arguments
@@ -146,6 +139,17 @@ int main(int argc, char* argv[]) {
                 }
                 return 0;
             } else if (args.command == "list") {
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 ProgressBar::display_phase_header("Available Targets", "🎯");
                 for (const auto& [name, target] : project.targets) {
                     std::string type_str;
@@ -184,11 +188,44 @@ int main(int argc, char* argv[]) {
             } else if (args.command == "fetch") {
                 ProgressBar::display_header();
                 // Fetch git dependencies only
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 result = builder.build_git_dependencies_only();
             } else if (args.command == "watch" || args.command == "daemon") {
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 // Run in daemon/watch mode
                 result = builder.run_daemon_mode(args.poll_interval, args.log_file);
             } else if (args.command == "build") {
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 if (!args.target_or_sequence.empty()) {
                     // Build specific target for specified platform
                     result = builder.build_target_for_platform(args.target_or_sequence, args.platform);
@@ -212,6 +249,17 @@ int main(int argc, char* argv[]) {
                 }
             } else if (args.command == "sequence") {
                 if (!args.target_or_sequence.empty()) {
+                    // Load configuration from the file (defaults to .bodge)
+                    ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                    // Fatal check if essential information is missing after loading
+                    if (!project.is_valid()) {
+                        projectLoadError();
+                        return 1;
+                    }
+
+                    // Create build system
+                    BuildSystem builder(project);
                     // Execute specific sequence
                     result = builder.execute_sequence(args.target_or_sequence);
                 } else {
@@ -228,7 +276,17 @@ int main(int argc, char* argv[]) {
             if (args.platform_specified || args.arch_specified) {
                 std::cout << "Bodge - The Idiotic Build System" << std::endl;
                 std::cout << "Target platform: " << args.platform.to_string() << std::endl << std::endl;
-                
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 // Build all targets for the specified platform
                 bool all_success = true;
                 for (const auto& [name, target] : project.targets) {
@@ -240,6 +298,17 @@ int main(int argc, char* argv[]) {
                 }
                 result = all_success ? S_OK : S_BUILD_FAILED;
             } else {
+                // Load configuration from the file (defaults to .bodge)
+                ProjectConfig project = ConfigParser::load_project_config(".bodge");
+
+                // Fatal check if essential information is missing after loading
+                if (!project.is_valid()) {
+                    projectLoadError();
+                    return 1;
+                }
+
+                // Create build system
+                BuildSystem builder(project);
                 result = builder.build();
             }
         }

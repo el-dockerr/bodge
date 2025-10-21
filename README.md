@@ -14,6 +14,11 @@ and add them to the build chain. Other features will be added step by step.
 
 The major goal is to have one little program what makes the build of C++ software easy like maven in Java or Cargo in Rust.
 
+## Screenshot
+
+![CLI Demo](./docs/cli_demo.png)
+
+
 
 ## Download
 

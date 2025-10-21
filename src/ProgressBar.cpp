@@ -15,17 +15,30 @@
 #endif
 
 int ProgressBar::spinner_state_ = 0;
+static bool console_initialized = false;
 
-ProgressBar::ProgressBar(int total, int width)
-    : total_(total), width_(width) {
+// Initialize Windows console for UTF-8 and ANSI colors
+static void initialize_console() {
+    if (console_initialized) return;
+    console_initialized = true;
+    
 #ifdef _WIN32
+    // Set console output to UTF-8
+    SetConsoleOutputCP(CP_UTF8);
+    
     // Enable ANSI color support on Windows 10+
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dwMode = 0;
-    GetConsoleMode(hOut, &dwMode);
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(hOut, dwMode);
+    if (GetConsoleMode(hOut, &dwMode)) {
+        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        SetConsoleMode(hOut, dwMode);
+    }
 #endif
+}
+
+ProgressBar::ProgressBar(int total, int width)
+    : total_(total), width_(width) {
+    initialize_console();
 }
 
 bool ProgressBar::supports_ansi() {
@@ -107,6 +120,7 @@ void ProgressBar::display(int current, const std::string& prefix) {
 }
 
 void ProgressBar::display_phase_header(const std::string& phase_name, const std::string& icon) {
+    initialize_console();
     std::cout << std::endl;
     std::cout << get_color("bright_cyan") << get_color("bold") 
               << "╔══════════════════════════════════════════════════════════════╗" 
@@ -148,6 +162,7 @@ void ProgressBar::display_warning(const std::string& message) {
 }
 
 void ProgressBar::display_build_summary(bool success, long long duration_ms, const std::string& target_name) {
+    initialize_console();
     std::cout << std::endl;
     
     std::string border_color = success ? "bright_green" : "red";
@@ -200,6 +215,7 @@ void ProgressBar::display_spinner(const std::string& message) {
 }
 
 void ProgressBar::display_header() {
+    initialize_console();
     std::cout << get_color("bright_magenta") << get_color("bold") << std::endl;
     std::cout << "╔════════════════════════════════════════════════════════════════╗" << std::endl;
     std::cout << "║                                                                ║" << std::endl;
