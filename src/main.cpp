@@ -11,8 +11,10 @@
 #include "BuildSystem.h"
 #include "Architecture.h"
 #include "ProgressBar.h"
+#include "Strings.h"
 #include "core.h"
 #include <iostream>
+#include <cstdlib>
 
 // Helper structure to hold parsed command line arguments
 struct CommandLineArgs {
@@ -37,30 +39,68 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
         
         if (arg.find("--platform=") == 0) {
             std::string platform_str = arg.substr(11); // Remove "--platform="
+            if (platform_str.empty()) {
+                std::cerr << STR(WARN_EMPTY_PLATFORM) << std::endl;
+                continue;
+            }
             args.platform = Platform::from_string(platform_str);
             args.platform_specified = true;
         } else if (arg.find("--arch=") == 0) {
             std::string arch_str = arg.substr(7); // Remove "--arch="
+            if (arch_str.empty()) {
+                std::cerr << STR(WARN_EMPTY_ARCH) << std::endl;
+                continue;
+            }
             Architecture arch = ArchitectureDetector::string_to_architecture(arch_str);
             if (arch != Architecture::UNKNOWN) {
                 // Keep current OS, change architecture
                 args.platform.architecture = arch;
                 args.arch_specified = true;
+            } else {
+                std::cerr << STR(WARN_UNKNOWN_ARCH) << arch_str << std::endl;
             }
         } else if (arg.find("--interval=") == 0) {
             std::string interval_str = arg.substr(11); // Remove "--interval="
+            if (interval_str.empty()) {
+                std::cerr << STR(WARN_EMPTY_INTERVAL) << std::endl;
+                continue;
+            }
             try {
-                args.poll_interval = std::stoi(interval_str);
-                if (args.poll_interval < 100) {
-                    args.poll_interval = 100; // Minimum 100ms
+                // Use strtol for better error checking and overflow protection
+                char* end_ptr;
+                long value = std::strtol(interval_str.c_str(), &end_ptr, 10);
+                
+                // Check for conversion errors
+                if (end_ptr == interval_str.c_str() || *end_ptr != '\0') {
+                    std::cerr << STR(WARN_INVALID_INTERVAL) << std::endl;
+                    continue;
                 }
+                
+                // Check for overflow and range
+                if (value < 100 || value > 3600000) { // Max 1 hour
+                    std::cerr << STR(WARN_INTERVAL_OUT_OF_RANGE) << std::endl;
+                    continue;
+                }
+                
+                args.poll_interval = static_cast<int>(value);
             } catch (...) {
-                std::cerr << "[WARNING] Invalid interval value, using default (1000ms)" << std::endl;
+                std::cerr << STR(WARN_INVALID_INTERVAL) << std::endl;
             }
         } else if (arg.find("--log=") == 0) {
-            args.log_file = arg.substr(6); // Remove "--log="
+            std::string log_file = arg.substr(6); // Remove "--log="
+            if (log_file.empty()) {
+                std::cerr << STR(WARN_EMPTY_LOG_FILE) << std::endl;
+                continue;
+            }
+            // Validate log file path
+            if (log_file.find("..") != std::string::npos || log_file.length() > 256) {
+                std::cerr << STR(WARN_INVALID_LOG_FILE) << std::endl;
+                continue;
+            }
+            args.log_file = log_file;
         } else if (arg.find("--") == 0) {
             // Skip other unknown options
+            std::cerr << STR(WARN_UNKNOWN_OPTION) << arg << std::endl;
             continue;
         } else if (args.command.empty()) {
             args.command = arg;
@@ -73,13 +113,14 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
 }
 
 void projectLoadError() {
-    std::cerr << "[FATAL] Configuration is critically incomplete. "
-    << "Please ensure required fields are set in .bodge." 
-    << std::endl;
+    std::cerr << STR(ERR_CONFIG_INCOMPLETE) << std::endl;
 }
 
 int main(int argc, char* argv[]) {
     try {
+        // Initialize internationalization
+        Strings::initialize();
+        
         E_RESULT result;
 
         // Parse command line arguments
@@ -87,30 +128,30 @@ int main(int argc, char* argv[]) {
 
         // Check for command line arguments
         if (argc > 1 && !args.command.empty()) {
-            std::cout << "Bodge - The Idiotic Build System" << std::endl;
+            std::cout << STR(APP_TITLE) << std::endl;
             
             if (args.platform_specified || args.arch_specified) {
-                std::cout << "Target platform: " << args.platform.to_string() << std::endl << std::endl;
+                std::cout << STR(MSG_TARGET_PLATFORM) << args.platform.to_string() << std::endl << std::endl;
             }
             
             if (args.command == "help" || args.command == "--help" || args.command == "-h") {
-                std::cout << "Usage: bodge [command] [target/sequence] [options]" << std::endl << std::endl
-                          << "Commands:" << std::endl
-                          << "  build [target]     - Build specific target (default: all targets)" << std::endl
-                          << "  fetch              - Fetch git dependencies only" << std::endl
-                          << "  sequence [name]    - Execute specific sequence" << std::endl
-                          << "  watch              - Watch mode: automatically rebuild on file changes" << std::endl
-                          << "  daemon             - Alias for watch mode" << std::endl
-                          << "  list               - List available targets and sequences" << std::endl
-                          << "  platform           - Show current platform information" << std::endl
-                          << "  help               - Show this help message" << std::endl
-                          << "  version            - Show version information" << std::endl << std::endl
-                          << "Options:" << std::endl
-                          << "  --platform=<platform>  - Build for specific platform" << std::endl
-                          << "  --arch=<arch>          - Build for specific architecture" << std::endl
-                          << "  --interval=<ms>        - Poll interval for watch mode (default: 1000ms)" << std::endl
-                          << "  --log=<file>           - Log file for watch mode (default: bodge_daemon.log)" << std::endl << std::endl
-                          << "Examples:" << std::endl
+                std::cout << STR(CMD_USAGE) << std::endl << std::endl
+                          << STR(CMD_COMMANDS) << std::endl
+                          << STR(CMD_BUILD) << std::endl
+                          << STR(CMD_FETCH) << std::endl
+                          << STR(CMD_SEQUENCE) << std::endl
+                          << STR(CMD_WATCH) << std::endl
+                          << STR(CMD_DAEMON) << std::endl
+                          << STR(CMD_LIST) << std::endl
+                          << STR(CMD_PLATFORM) << std::endl
+                          << STR(CMD_HELP) << std::endl
+                          << STR(CMD_VERSION) << std::endl << std::endl
+                          << STR(OPT_OPTIONS) << std::endl
+                          << STR(OPT_PLATFORM) << std::endl
+                          << STR(OPT_ARCH) << std::endl
+                          << STR(OPT_INTERVAL) << std::endl
+                          << STR(OPT_LOG) << std::endl << std::endl
+                          << STR(EXAMPLES_HEADER) << std::endl
                           << "  bodge                          # Build all targets for current platform" << std::endl
                           << "  bodge --platform=linux_x64    # Build all targets for Linux 64-bit" << std::endl
                           << "  bodge build mylib --arch=x86   # Build 'mylib' for 32-bit" << std::endl
@@ -122,17 +163,17 @@ int main(int argc, char* argv[]) {
                 return 0;
             } else if (args.command == "version" || args.command == "--version" || args.command == "-v") {
                 ProgressBar::display_header();
-                ProgressBar::display_info("Author: Swen \"El Dockerr\" Kalski");
-                ProgressBar::display_info(std::string("Version: ") + get_version());
+                ProgressBar::display_info(STR(APP_AUTHOR));
+                ProgressBar::display_info(STR(APP_VERSION) + std::string(get_version()));
                 return 0;
             } else if (args.command == "platform") {
                 Platform current_platform = ArchitectureDetector::detect_current_platform();
-                std::cout << "Current platform information:" << std::endl;
-                std::cout << "  OS: " << ArchitectureDetector::os_to_string(current_platform.operating_system) << std::endl;
-                std::cout << "  Architecture: " << ArchitectureDetector::architecture_to_string(current_platform.architecture) << std::endl;
-                std::cout << "  Platform string: " << current_platform.to_string() << std::endl << std::endl;
+                std::cout << STR(MSG_CURRENT_PLATFORM_INFO) << std::endl;
+                std::cout << STR(MSG_OS) << ArchitectureDetector::os_to_string(current_platform.operating_system) << std::endl;
+                std::cout << STR(MSG_ARCHITECTURE) << ArchitectureDetector::architecture_to_string(current_platform.architecture) << std::endl;
+                std::cout << STR(MSG_PLATFORM_STRING) << current_platform.to_string() << std::endl << std::endl;
                 
-                std::cout << "Supported platforms:" << std::endl;
+                std::cout << STR(MSG_SUPPORTED_PLATFORMS) << std::endl;
                 std::vector<Platform> all_platforms = Platform::get_all_platforms();
                 for (const Platform& platform : all_platforms) {
                     std::cout << "  " << platform.to_string() << std::endl;
@@ -263,19 +304,19 @@ int main(int argc, char* argv[]) {
                     // Execute specific sequence
                     result = builder.execute_sequence(args.target_or_sequence);
                 } else {
-                    std::cerr << "[ERROR] Please specify a sequence name." << std::endl;
+                    std::cerr << STR(ERR_SPECIFY_SEQUENCE) << std::endl;
                     return 1;
                 }
             } else {
-                std::cerr << "[ERROR] Unknown command: " << args.command << std::endl;
-                std::cerr << "Use 'bodge help' for usage information." << std::endl;
+                std::cerr << STR(ERR_UNKNOWN_COMMAND) << args.command << std::endl;
+                std::cerr << STR(ERR_USE_HELP) << std::endl;
                 return 1;
             }
         } else {
             // Default behavior or platform-only arguments
             if (args.platform_specified || args.arch_specified) {
-                std::cout << "Bodge - The Idiotic Build System" << std::endl;
-                std::cout << "Target platform: " << args.platform.to_string() << std::endl << std::endl;
+                std::cout << STR(APP_TITLE) << std::endl;
+                std::cout << STR(MSG_TARGET_PLATFORM) << args.platform.to_string() << std::endl << std::endl;
                 // Load configuration from the file (defaults to .bodge)
                 ProjectConfig project = ConfigParser::load_project_config(".bodge");
 

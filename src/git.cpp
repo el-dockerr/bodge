@@ -1,45 +1,136 @@
 #include "git.h"
+#include <regex>
+#include <filesystem>
+#include <algorithm>
 
- E_RESULT Git::manage_git_repository(const std::string& repo_url, const std::string& local_path) {
+std::string Git::sanitize_shell_argument(const std::string& input) {
+    std::string result;
+    result.reserve(input.length() + 2);
+    
+    // On Windows, use double quotes; on Unix, use single quotes
+#ifdef _WIN32
+    result += '"';
+    for (char c : input) {
+        // Escape special characters for Windows
+        if (c == '"' || c == '%' || c == '!' || c == '^' || c == '&' || c == '|' || c == '<' || c == '>') {
+            result += '^';
+        }
+        result += c;
+    }
+    result += '"';
+#else
+    // For Unix, use single quotes and escape single quotes
+    result += '\'';
+    for (char c : input) {
+        if (c == '\'') {
+            result += "'\\''";
+        } else {
+            result += c;
+        }
+    }
+    result += '\'';
+#endif
+    
+    return result;
+}
+
+bool Git::validate_git_url(const std::string& url) {
+    if (url.empty() || url.length() > 2048) {
+        return false;
+    }
+    
+    // Check for valid git URL patterns
+    std::regex git_url_pattern(
+        R"(^(https?://|git@|git://|ssh://|file://)[^\s<>\"{}|\\^`\[\]]+$)",
+        std::regex_constants::icase
+    );
+    
+    return std::regex_match(url, git_url_pattern);
+}
+
+bool Git::validate_local_path(const std::string& path) {
+    if (path.empty() || path.length() > 4096) {
+        return false;
+    }
+    
+    // Check for path traversal attempts and dangerous characters
+    if (path.find("..") != std::string::npos) {
+        return false;
+    }
+    
+    // Disallow absolute paths on Unix to prevent writing outside project
+#ifndef _WIN32
+    if (!path.empty() && path[0] == '/') {
+        return false;
+    }
+#else
+    // On Windows, check for absolute paths (drive letters, UNC paths)
+    if (path.length() >= 2 && path[1] == ':') {
+        return false;
+    }
+    if (path.length() >= 2 && path[0] == '\\' && path[1] == '\\') {
+        return false;
+    }
+#endif
+    
+    // Check for dangerous characters
+    const std::string dangerous_chars = "<>|\"*?";
+    for (char c : dangerous_chars) {
+        if (path.find(c) != std::string::npos) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+E_RESULT Git::manage_git_repository(const std::string& repo_url, const std::string& local_path) {
+    // Validate inputs
+    if (!validate_git_url(repo_url)) {
+        std::cerr << "[ERROR] Invalid git repository URL: " << repo_url << std::endl;
+        return S_ERROR_INVALID_ARGUMENT;
+    }
+    
+    if (!validate_local_path(local_path)) {
+        std::cerr << "[ERROR] Invalid local path: " << local_path << std::endl;
+        return S_ERROR_INVALID_ARGUMENT;
+    }
+    
     // 1. Check if Git is available
-    // std::system returns 0 for success on most systems when the command is found.
-    if (std::system(GIT_CHECK_CMD) != 0) {
-        std::cerr << "Error: Git is not available. Please install Git and ensure it is in your system's PATH." << std::endl;
+    if (std::system("git --version > /dev/null 2>&1") != 0) {
+        std::cerr << "[ERROR] Git is not available. Please install Git and ensure it is in your system's PATH." << std::endl;
         return S_ERROR_RESOURCE_NOT_FOUND;
     }
 
-    // 2. Check if the repository directory exists
-    // The 'stat' function (or similar OS-specific functions) is the proper way, 
-    // but for simplicity, we'll try to check existence by attempting a pull.
-    std::string test_cmd = "test -d " + local_path; // Linux/macOS
-
-    #ifdef _WIN32 // Windows
-        // Windows does not have 'test -d', so we use 'if exist'
-        std::string win_test_cmd = "if exist " + local_path + " (exit 0) else (exit 1)";
-    #endif
-    if (std::system(test_cmd.c_str()) == 0) {
-        // Directory exists
-    } else {
-        // Directory does not exist
-    }
-
-    // Attempt a pull first. If it succeeds (0), the repo exists.
-    std::string pull_cmd = GIT_PULL_CMD(local_path);
-    if (std::system(pull_cmd.c_str()) == 0) {
-        std::cout << "Repository already cloned. Successfully pulled latest changes." << std::endl;
-        return S_OK;
-    } else {
-        // Pull failed (non-zero return code), likely because the directory doesn't exist
-        // or isn't a Git repository. Attempt to clone.
-        std::cout << "Repository not found locally. Attempting to clone..." << std::endl;
+    // 2. Check if the repository directory exists using std::filesystem
+    std::filesystem::path fs_path(local_path);
+    bool dir_exists = std::filesystem::exists(fs_path) && std::filesystem::is_directory(fs_path);
+    
+    if (dir_exists) {
+        // Attempt to pull
+        std::string pull_cmd = "git -C " + sanitize_shell_argument(local_path) + " pull";
+        int result = std::system(pull_cmd.c_str());
         
-        std::string clone_cmd = GIT_CLONE_CMD(repo_url, local_path);
-        if (std::system(clone_cmd.c_str()) == 0) {
-            std::cout << "Successfully cloned repository." << std::endl;
+        if (result == 0) {
+            std::cout << "[SUCCESS] Repository already cloned. Successfully pulled latest changes." << std::endl;
             return S_OK;
         } else {
-            std::cerr << "Error: Git clone failed. Command: " << clone_cmd << std::endl;
-            return S_ERROR_RESOURCE_NOT_FOUND;
+            std::cerr << "[WARNING] Pull failed. Directory exists but may not be a valid git repository." << std::endl;
+            return S_GIT_ERROR;
+        }
+    } else {
+        // Directory does not exist, attempt to clone
+        std::cout << "[INFO] Repository not found locally. Attempting to clone..." << std::endl;
+        
+        std::string clone_cmd = "git clone " + sanitize_shell_argument(repo_url) + " " + sanitize_shell_argument(local_path);
+        int result = std::system(clone_cmd.c_str());
+        
+        if (result == 0) {
+            std::cout << "[SUCCESS] Successfully cloned repository." << std::endl;
+            return S_OK;
+        } else {
+            std::cerr << "[ERROR] Git clone failed." << std::endl;
+            return S_GIT_ERROR;
         }
     }
 }

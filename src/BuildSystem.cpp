@@ -11,6 +11,37 @@
 #include <thread>
 #include <chrono>
 #include <csignal>
+#include <algorithm>
+#include <regex>
+
+namespace {
+    // Helper function to validate that a string doesn't contain command injection attempts
+    bool is_safe_compiler_argument(const std::string& arg) {
+        // Check for dangerous patterns
+        const std::vector<std::string> dangerous_patterns = {
+            ";", "&&", "||", "|", "`", "$(", "${", "\n", "\r"
+        };
+        
+        for (const auto& pattern : dangerous_patterns) {
+            if (arg.find(pattern) != std::string::npos) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    // Validate all arguments in a vector
+    bool validate_compiler_arguments(const std::vector<std::string>& args) {
+        for (const auto& arg : args) {
+            if (!is_safe_compiler_argument(arg)) {
+                std::cerr << "[ERROR] Potentially dangerous compiler argument detected: " << arg << std::endl;
+                return false;
+            }
+        }
+        return true;
+    }
+}
 
 BuildSystem::BuildSystem(const ProjectConfig& config) : config_(config) {}
 
@@ -95,6 +126,21 @@ E_RESULT BuildSystem::build_git_dependencies_only() const {
 }
 
 std::string BuildSystem::generate_command() const {
+    // Validate inputs before generating command
+    if (!is_safe_compiler_argument(config_.compiler)) {
+        ProgressBar::display_error("Invalid compiler specified");
+        return "";
+    }
+    
+    if (!validate_compiler_arguments(config_.cxx_flags) ||
+        !validate_compiler_arguments(config_.include_dirs) ||
+        !validate_compiler_arguments(config_.sources) ||
+        !validate_compiler_arguments(config_.library_dirs) ||
+        !validate_compiler_arguments(config_.libraries)) {
+        ProgressBar::display_error("Invalid compiler arguments detected");
+        return "";
+    }
+    
     std::stringstream command;
 
     // 1. Compiler
@@ -110,6 +156,10 @@ std::string BuildSystem::generate_command() const {
     command << StringUtils::join(config_.sources, "", " ");
 
     // 5. Output file (-o)
+    if (!is_safe_compiler_argument(config_.output_name)) {
+        ProgressBar::display_error("Invalid output name specified");
+        return "";
+    }
     command << " -o " << config_.output_name;
 
     // 6. Library Directories (-L)
@@ -122,6 +172,18 @@ std::string BuildSystem::generate_command() const {
 }
 
 E_RESULT BuildSystem::execute_command(const std::string& command) const {
+    // Validate command is not empty (could indicate validation failure)
+    if (command.empty()) {
+        ProgressBar::display_error("Build command is empty or invalid");
+        return S_ERROR_INVALID_ARGUMENT;
+    }
+    
+    // Basic sanity check on command length
+    if (command.length() > 32768) { // 32KB max command length
+        ProgressBar::display_error("Build command is too long");
+        return S_ERROR_INVALID_ARGUMENT;
+    }
+    
     ProgressBar::display_info("Executing build command...");
     std::cout << command << std::endl;
 
@@ -210,6 +272,25 @@ E_RESULT BuildSystem::execute_sequence(const std::string& sequence_name) const {
 }
 
 std::string BuildSystem::generate_target_command(const BuildTarget& target) const {
+    // Validate inputs
+    if (!is_safe_compiler_argument(config_.compiler)) {
+        ProgressBar::display_error("Invalid compiler specified");
+        return "";
+    }
+    
+    if (!validate_compiler_arguments(config_.global_cxx_flags) ||
+        !validate_compiler_arguments(target.cxx_flags) ||
+        !validate_compiler_arguments(config_.global_include_dirs) ||
+        !validate_compiler_arguments(target.include_dirs) ||
+        !validate_compiler_arguments(target.sources) ||
+        !validate_compiler_arguments(config_.global_library_dirs) ||
+        !validate_compiler_arguments(target.library_dirs) ||
+        !validate_compiler_arguments(config_.global_libraries) ||
+        !validate_compiler_arguments(target.libraries)) {
+        ProgressBar::display_error("Invalid compiler arguments detected in target");
+        return "";
+    }
+    
     std::stringstream command;
     
     // 1. Compiler
@@ -250,6 +331,10 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
     
     // 8. Output file (-o)
     std::string output_name = target.output_name + target.get_output_extension();
+    if (!is_safe_compiler_argument(output_name)) {
+        ProgressBar::display_error("Invalid output name specified");
+        return "";
+    }
     command << " -o " << output_name;
     
     // 9. Global Library Directories (-L)
@@ -279,58 +364,70 @@ E_RESULT BuildSystem::build_git_dependencies() const {
     ProgressBar::display_phase_header("Fetching Dependencies", "📦");
     
     Git git;
-    int i = 0;
-    int total_deps = config_.dependencies_url.size();
-    ProgressBar dep_progress(total_deps, 50);
+    size_t total_deps = config_.dependencies_url.size();
+    ProgressBar dep_progress(static_cast<int>(total_deps), 50);
     
-    for (const auto& url : config_.dependencies_url) {
+    for (size_t i = 0; i < total_deps; ++i) {
+        // Bounds check (should be redundant due to size check above, but defensive)
+        if (i >= config_.dependencies_url.size() || i >= config_.dependencies_path.size()) {
+            ProgressBar::display_error("Index out of bounds in dependencies arrays.");
+            return S_ERROR_INVALID_ARGUMENT;
+        }
+        
+        const std::string& url = config_.dependencies_url[i];
+        const std::string& path = config_.dependencies_path[i];
+        
         std::string short_url = url.length() > 50 ? url.substr(0, 47) + "..." : url;
         ProgressBar::display_info("Fetching: " + short_url);
-        dep_progress.display(i, "Dependencies");
+        dep_progress.display(static_cast<int>(i), "Dependencies");
         
         try {
-            E_RESULT res = git.manage_git_repository(url, config_.dependencies_path[i]);
-            if (res != S_OK) {
-                ProgressBar::display_error("Failed to clone " + url);
+            E_RESULT res = git.manage_git_repository(url, path);
+            if (res != S_OK && res != S_GIT_ERROR) {
+                ProgressBar::display_error("Failed to fetch " + url + " (error: " + std::to_string(res) + ")");
                 return S_FAILURE;
-            } else if (res == S_OK) {
-                ProgressBar::display_success("Fetched " + short_url);
-                if (!config_.run_bodge_after_clone.empty()) {
-                    ProgressBar::display_info("Running post-clone command: " + config_.run_bodge_after_clone);
-                    if (config_.run_bodge_after_clone == "true") {
-                        // Save current directory
-                        std::filesystem::path original_path = std::filesystem::current_path();
-                        
-                        try {
-                            // Change to the cloned repository directory
-                            std::filesystem::current_path(config_.dependencies_path[i]);
-                            
-                            // Run bodge in the repository directory
-                            ProgressBar::display_info("Running bodge in " + config_.dependencies_path[i]);
-                            if (std::system("bodge") != 0) {
-                                ProgressBar::display_error("Post-clone bodge command failed.");
-                                // Restore original directory before returning
-                                std::filesystem::current_path(original_path);
-                                return S_COMMAND_EXECUTION_FAILED;
-                            }
-                            
-                            // Restore original directory
-                            std::filesystem::current_path(original_path);
-                            ProgressBar::display_success("Post-clone bodge command completed.");
-                        } catch (const std::filesystem::filesystem_error& e) {
-                            ProgressBar::display_error("Failed to change directory: " + std::string(e.what()));
-                            // Attempt to restore original directory
-                            try {
-                                std::filesystem::current_path(original_path);
-                            } catch (...) {}
-                            return S_COMMAND_EXECUTION_FAILED;
-                        }
-                    }
+            }
+            
+            ProgressBar::display_success("Fetched " + short_url);
+            
+            if (!config_.run_bodge_after_clone.empty() && config_.run_bodge_after_clone == "true") {
+                ProgressBar::display_info("Running post-clone command in " + path);
+                
+                // Save current directory
+                std::filesystem::path original_path;
+                try {
+                    original_path = std::filesystem::current_path();
+                } catch (const std::filesystem::filesystem_error& e) {
+                    ProgressBar::display_error("Failed to get current directory: " + std::string(e.what()));
+                    return S_COMMAND_EXECUTION_FAILED;
                 }
-                i++;
-            } else {
-                ProgressBar::display_error("Failed to clone " + url);
-                return S_FAILURE;
+                
+                try {
+                    // Change to the cloned repository directory
+                    std::filesystem::current_path(path);
+                    
+                    // Run bodge in the repository directory
+                    int result = std::system("bodge");
+                    
+                    // Restore original directory immediately
+                    std::filesystem::current_path(original_path);
+                    
+                    if (result != 0) {
+                        ProgressBar::display_error("Post-clone bodge command failed with exit code: " + std::to_string(result));
+                        return S_COMMAND_EXECUTION_FAILED;
+                    }
+                    
+                    ProgressBar::display_success("Post-clone bodge command completed.");
+                } catch (const std::filesystem::filesystem_error& e) {
+                    ProgressBar::display_error("Failed to change directory: " + std::string(e.what()));
+                    // Attempt to restore original directory
+                    try {
+                        std::filesystem::current_path(original_path);
+                    } catch (...) {
+                        ProgressBar::display_error("Failed to restore original directory!");
+                    }
+                    return S_COMMAND_EXECUTION_FAILED;
+                }
             }
         } catch (const std::exception& e) {
             ProgressBar::display_error("Exception during git operation: " + std::string(e.what()));
@@ -338,7 +435,7 @@ E_RESULT BuildSystem::build_git_dependencies() const {
         }
     }
     
-    dep_progress.display(total_deps, "Dependencies");
+    dep_progress.display(static_cast<int>(total_deps), "Dependencies");
     ProgressBar::display_success("All dependencies fetched successfully!");
     return S_OK;
 }
@@ -424,8 +521,28 @@ E_RESULT BuildSystem::create_directory(const std::string& path) const {
 }
 
 std::string BuildSystem::generate_target_command_for_platform(const BuildTarget& target, const Platform& platform) const {
+    // Validate compiler
+    if (!is_safe_compiler_argument(config_.compiler)) {
+        ProgressBar::display_error("Invalid compiler specified");
+        return "";
+    }
+    
     // Get platform-specific configuration
     PlatformConfig platform_config = target.get_platform_config(platform);
+    
+    // Validate all arguments
+    if (!validate_compiler_arguments(config_.global_cxx_flags) ||
+        !validate_compiler_arguments(platform_config.cxx_flags) ||
+        !validate_compiler_arguments(config_.global_include_dirs) ||
+        !validate_compiler_arguments(platform_config.include_dirs) ||
+        !validate_compiler_arguments(platform_config.sources) ||
+        !validate_compiler_arguments(config_.global_library_dirs) ||
+        !validate_compiler_arguments(platform_config.library_dirs) ||
+        !validate_compiler_arguments(config_.global_libraries) ||
+        !validate_compiler_arguments(platform_config.libraries)) {
+        ProgressBar::display_error("Invalid compiler arguments detected in platform-specific target");
+        return "";
+    }
     
     std::stringstream command;
     
@@ -438,6 +555,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     // 3. Global platform-specific flags
     auto global_plat_it = config_.global_platform_configs.find(platform);
     if (global_plat_it != config_.global_platform_configs.end()) {
+        if (!validate_compiler_arguments(global_plat_it->second.cxx_flags)) {
+            ProgressBar::display_error("Invalid global platform-specific compiler arguments");
+            return "";
+        }
         command << " " << StringUtils::join(global_plat_it->second.cxx_flags, "", " ");
     }
     
@@ -467,6 +588,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     
     // 7. Global platform-specific include directories
     if (global_plat_it != config_.global_platform_configs.end()) {
+        if (!validate_compiler_arguments(global_plat_it->second.include_dirs)) {
+            ProgressBar::display_error("Invalid global platform-specific include directories");
+            return "";
+        }
         command << StringUtils::join(global_plat_it->second.include_dirs, " -I", " ");
     }
     
@@ -478,6 +603,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     
     // 10. Output file (-o) with platform-specific suffix
     std::string output_name = target.output_name + platform_config.output_name_suffix + target.get_output_extension(platform);
+    if (!is_safe_compiler_argument(output_name)) {
+        ProgressBar::display_error("Invalid output name specified");
+        return "";
+    }
     command << " -o " << output_name;
     
     // 11. Global Library Directories (-L)
@@ -485,6 +614,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     
     // 12. Global platform-specific library directories
     if (global_plat_it != config_.global_platform_configs.end()) {
+        if (!validate_compiler_arguments(global_plat_it->second.library_dirs)) {
+            ProgressBar::display_error("Invalid global platform-specific library directories");
+            return "";
+        }
         command << StringUtils::join(global_plat_it->second.library_dirs, " -L", " ");
     }
     
@@ -496,6 +629,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     
     // 15. Global platform-specific libraries
     if (global_plat_it != config_.global_platform_configs.end()) {
+        if (!validate_compiler_arguments(global_plat_it->second.libraries)) {
+            ProgressBar::display_error("Invalid global platform-specific libraries");
+            return "";
+        }
         command << StringUtils::join(global_plat_it->second.libraries, " -l", " ");
     }
     

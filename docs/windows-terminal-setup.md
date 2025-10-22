@@ -1,3 +1,8 @@
+---
+layout: default
+title: Windows Terminal Setup
+---
+
 # Windows Terminal Setup for Unicode Display
 
 If you're experiencing issues with the ASCII art or emojis not displaying correctly in PowerShell or Windows CMD, here are solutions:

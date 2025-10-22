@@ -3,8 +3,6 @@ layout: default
 title: Getting Started
 ---
 
-[← Back to Home](index) | [Configuration →](configuration)
-
 # Getting Started with Bodge
 
 ## Installation
@@ -71,12 +69,25 @@ hello.exe          # Run the executable (Windows)
 
 ## Next Steps
 
-- [Configuration Reference](configuration) - Learn about all configuration options
-- [Examples](examples) - See more complex project examples
-- [Contributing Guide](contributing) - Help improve Bodge
+<div class="feature-grid">
+  <div class="feature-card">
+    <h3>⚙️ Configuration Reference</h3>
+    <p>Learn about all configuration options</p>
+    <a href="configuration" class="btn">Read More →</a>
+  </div>
 
----
-[← Back to Home](index) | [Configuration →](configuration)
+  <div class="feature-card">
+    <h3>📚 Examples</h3>
+    <p>See more complex project examples</p>
+    <a href="examples" class="btn">View Examples →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>🤝 Contributing Guide</h3>
+    <p>Help improve Bodge</p>
+    <a href="contributing" class="btn">Contribute →</a>
+  </div>
+</div>
 
 ## Common Issues
 
