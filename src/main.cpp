@@ -13,6 +13,7 @@
 #include "ProgressBar.h"
 #include "core.h"
 #include <iostream>
+#include <cstdlib>
 
 // Helper structure to hold parsed command line arguments
 struct CommandLineArgs {
@@ -37,30 +38,68 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
         
         if (arg.find("--platform=") == 0) {
             std::string platform_str = arg.substr(11); // Remove "--platform="
+            if (platform_str.empty()) {
+                std::cerr << "[WARNING] Empty platform value, using current platform" << std::endl;
+                continue;
+            }
             args.platform = Platform::from_string(platform_str);
             args.platform_specified = true;
         } else if (arg.find("--arch=") == 0) {
             std::string arch_str = arg.substr(7); // Remove "--arch="
+            if (arch_str.empty()) {
+                std::cerr << "[WARNING] Empty architecture value, ignoring" << std::endl;
+                continue;
+            }
             Architecture arch = ArchitectureDetector::string_to_architecture(arch_str);
             if (arch != Architecture::UNKNOWN) {
                 // Keep current OS, change architecture
                 args.platform.architecture = arch;
                 args.arch_specified = true;
+            } else {
+                std::cerr << "[WARNING] Unknown architecture: " << arch_str << std::endl;
             }
         } else if (arg.find("--interval=") == 0) {
             std::string interval_str = arg.substr(11); // Remove "--interval="
+            if (interval_str.empty()) {
+                std::cerr << "[WARNING] Empty interval value, using default (1000ms)" << std::endl;
+                continue;
+            }
             try {
-                args.poll_interval = std::stoi(interval_str);
-                if (args.poll_interval < 100) {
-                    args.poll_interval = 100; // Minimum 100ms
+                // Use strtol for better error checking and overflow protection
+                char* end_ptr;
+                long value = std::strtol(interval_str.c_str(), &end_ptr, 10);
+                
+                // Check for conversion errors
+                if (end_ptr == interval_str.c_str() || *end_ptr != '\0') {
+                    std::cerr << "[WARNING] Invalid interval value, using default (1000ms)" << std::endl;
+                    continue;
                 }
+                
+                // Check for overflow and range
+                if (value < 100 || value > 3600000) { // Max 1 hour
+                    std::cerr << "[WARNING] Interval out of range (100-3600000ms), using default (1000ms)" << std::endl;
+                    continue;
+                }
+                
+                args.poll_interval = static_cast<int>(value);
             } catch (...) {
                 std::cerr << "[WARNING] Invalid interval value, using default (1000ms)" << std::endl;
             }
         } else if (arg.find("--log=") == 0) {
-            args.log_file = arg.substr(6); // Remove "--log="
+            std::string log_file = arg.substr(6); // Remove "--log="
+            if (log_file.empty()) {
+                std::cerr << "[WARNING] Empty log file path, using default (bodge_daemon.log)" << std::endl;
+                continue;
+            }
+            // Validate log file path
+            if (log_file.find("..") != std::string::npos || log_file.length() > 256) {
+                std::cerr << "[WARNING] Invalid log file path, using default (bodge_daemon.log)" << std::endl;
+                continue;
+            }
+            args.log_file = log_file;
         } else if (arg.find("--") == 0) {
             // Skip other unknown options
+            std::cerr << "[WARNING] Unknown option: " << arg << std::endl;
             continue;
         } else if (args.command.empty()) {
             args.command = arg;
