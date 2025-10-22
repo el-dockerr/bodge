@@ -3,8 +3,6 @@ layout: default
 title: Configuration Reference
 ---
 
-[← Getting Started](getting-started) | [Home](index) | [Examples →](examples)
-
 # Configuration Reference
 
 This page documents all available options for `.bodge` configuration files.
@@ -217,6 +215,3 @@ mylib.include_dirs: include, external/boost
 # Absolute paths (if needed)
 mylib.include_dirs: /usr/local/include, /opt/custom/include
 ```
-
----
-[← Getting Started](getting-started) | [Home](index) | [Examples →](examples)

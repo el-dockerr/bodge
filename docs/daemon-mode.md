@@ -1,3 +1,8 @@
+---
+layout: default
+title: Daemon Mode
+---
+
 # Daemon Mode - Automatic Rebuilds
 
 Bodge includes a powerful **daemon mode** (also called **watch mode**) that automatically monitors your source files for changes and triggers rebuilds whenever modifications are detected. This is particularly useful during active development when you want immediate feedback on your code changes.

@@ -1,3 +1,8 @@
+---
+layout: default
+title: Internationalization
+---
+
 # Internationalization (i18n) Support
 
 ## Overview
@@ -321,9 +326,4 @@ Bodge - 简易构建系统
   watch              - 监视模式：文件更改时自动重新构建
   ...
 ```
-
----
-
-**Version:** 1.0.1-rc1  
-**Last Updated:** October 22, 2025
 

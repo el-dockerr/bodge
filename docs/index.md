@@ -26,45 +26,89 @@ bodge version      # Version
 
 ## Key Features
 
-### Fetch sources from other repositories with ease
-- Bodge fetch from predefined repositories and can build directly
-- It keeps sources up to date
+<div class="feature-grid">
+  <div class="feature-card">
+    <h3>🔗 Repository Integration</h3>
+    <p>Fetch sources from external repositories and build them directly. Keeps your dependencies always up to date.</p>
+  </div>
 
-### Multi-Target Support
-- Build executables, shared libraries (DLLs/SOs), and static libraries
-- Per-target configuration with global defaults
-- Automatic file extension handling for different platforms
+  <div class="feature-card">
+    <h3>🎯 Multi-Target Support</h3>
+    <p>Build executables, shared libraries (DLLs/SOs), and static libraries with per-target configuration and automatic platform handling.</p>
+  </div>
 
-### Build Sequences
-- Chain multiple build and file operations
-- Copy, remove, and create directory operations
-- Perfect for deployment workflows
+  <div class="feature-card">
+    <h3>⚡ Build Sequences</h3>
+    <p>Chain multiple build and file operations. Perfect for complex deployment workflows with copy, remove, and mkdir operations.</p>
+  </div>
 
-### Automatic Source Collection
-- Use `src/**` to automatically collect all C++ files from directories
-- Recursive pattern matching with dependency analysis
-- No need to manually list every source file
+  <div class="feature-card">
+    <h3>📂 Smart Source Collection</h3>
+    <p>Use <code>src/**</code> to automatically collect all C++ files. Recursive pattern matching means no manual file listing.</p>
+  </div>
 
-### Advanced Build System
-- Cross-platform compatibility (Windows/Linux)
-- Static linking support to eliminate DLL dependencies
-- Comprehensive error handling and logging
+  <div class="feature-card">
+    <h3>🌐 Cross-Platform</h3>
+    <p>Works seamlessly on Windows and Linux with platform-specific configurations and static linking support.</p>
+  </div>
 
-### File Operations
-- Built-in file and directory copying
-- Safe file/directory removal
-- Directory creation with parent path handling
+  <div class="feature-card">
+    <h3>🛠️ File Operations</h3>
+    <p>Built-in file and directory copying, safe removal, and directory creation with full parent path handling.</p>
+  </div>
+</div>
 
 ## Documentation
 
-| Guide | Description |
-|-------|-------------|
-| [Getting Started](getting-started) | Installation and first steps |
-| [Configuration Reference](configuration) | Complete `.bodge` file reference |  
-| [Automatic Source Collection](automatic-source-collection) | Using `src/**` patterns for automatic file discovery |
-| [Daemon Mode](daemon-mode) | Automatic rebuilds and file watching |
-| [Examples](examples) | Real-world usage examples |
-| [Contributing Guide](contributing) | How to contribute |
+<div class="feature-grid">
+  <div class="feature-card">
+    <h3>🚀 Getting Started</h3>
+    <p>Installation and first steps to get Bodge running in minutes.</p>
+    <a href="getting-started" class="btn">Get Started →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>⚙️ Configuration</h3>
+    <p>Complete <code>.bodge</code> file reference with all available options.</p>
+    <a href="configuration" class="btn">Learn More →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>📁 Auto Source Collection</h3>
+    <p>Use <code>src/**</code> patterns for automatic file discovery.</p>
+    <a href="automatic-source-collection" class="btn">Explore →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>🌍 Internationalization</h3>
+    <p>Multi-language support for your build system.</p>
+    <a href="internationalization" class="btn">Learn More →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>👁️ Daemon Mode</h3>
+    <p>Automatic rebuilds with intelligent file watching.</p>
+    <a href="daemon-mode" class="btn">Explore →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>📚 Examples</h3>
+    <p>Real-world usage examples and best practices.</p>
+    <a href="examples" class="btn">View Examples →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>🤝 Contributing</h3>
+    <p>Help improve Bodge and join our community.</p>
+    <a href="contributing" class="btn">Contribute →</a>
+  </div>
+
+  <div class="feature-card">
+    <h3>💻 Windows Setup</h3>
+    <p>Configure Windows Terminal for the best experience.</p>
+    <a href="windows-terminal-setup" class="btn">Setup Guide →</a>
+  </div>
+</div>
 
 ## Building Bodge
 
@@ -100,11 +144,3 @@ We welcome contributions! Please see our [Contributing Guide](contributing.html)
 ## License
 
 Bodge is licensed under the [Bodge License (BL-V1.0)](https://github.com/el-dockerr/bodge/blob/main/license.txt).
-
----
-
----
-
-**Made with ❤️ by Swen "El Dockerr" Kalski**
-
-[View on GitHub](https://github.com/el-dockerr/bodge) | [Download Latest Release](https://github.com/el-dockerr/bodge/releases)

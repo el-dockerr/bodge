@@ -1,3 +1,8 @@
+---
+layout: default
+title: Automatic Source Collection
+---
+
 # Automatic Source Collection in Bodge
 
 Bodge now supports automatic source file collection using wildcard patterns, making it easy to build C++ projects without manually listing every source file.
