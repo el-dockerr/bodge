@@ -21,17 +21,17 @@ public:
     static std::vector<std::string> expand_source_patterns(const std::vector<std::string>& patterns);
     
     /**
-     * @brief Recursively finds all C++ source files in a directory
+     * @brief Recursively finds all C/C++ source files in a directory
      * @param directory The directory to search (e.g., "src")
      * @param recursive Whether to search subdirectories
-     * @return Vector of C++ source file paths
+     * @return Vector of C/C++ source file paths
      */
     static std::vector<std::string> find_cpp_files(const std::string& directory, bool recursive = false);
     
     /**
-     * @brief Checks if a file has a C++ source extension
+     * @brief Checks if a file has a C/C++ source extension
      * @param filename The filename to check
-     * @return true if it's a C++ source file (.cpp, .cxx, .cc, .c++)
+     * @return true if it's a C/C++ source file (.c, .cpp, .cxx, .cc, .c++)
      */
     static bool is_cpp_source_file(const std::string& filename);
     
@@ -43,7 +43,7 @@ public:
     static bool is_cpp_header_file(const std::string& filename);
     
     /**
-     * @brief Analyzes dependencies between C++ files to determine build order
+     * @brief Analyzes dependencies between C/C++ files to determine build order
      * @param source_files Vector of source file paths
      * @return Vector of source files ordered by dependencies
      */
@@ -88,8 +88,8 @@ private:
     static bool match_pattern(const std::string& filename, const std::string& pattern);
     
     /**
-     * @brief Extracts #include statements from a C++ file
-     * @param filepath Path to the C++ file
+     * @brief Extracts #include statements from a C/C++ file
+     * @param filepath Path to the C/C++ file
      * @return Set of included header files (local includes only)
      */
     static std::set<std::string> extract_local_includes(const std::string& filepath);

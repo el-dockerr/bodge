@@ -112,8 +112,21 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
     return args;
 }
 
-void projectLoadError() {
-    std::cerr << STR(ERR_CONFIG_INCOMPLETE) << std::endl;
+void projectLoadError(const ProjectConfig& config) {
+    std::cerr << "[FATAL] Configuration file '.bodge' is incomplete or invalid." << std::endl;
+    std::cerr << std::endl;
+    
+    std::vector<std::string> errors = config.get_validation_errors();
+    
+    if (!errors.empty()) {
+        std::cerr << "The following issues were found:" << std::endl;
+        for (const std::string& error : errors) {
+            std::cerr << error << std::endl;
+        }
+        std::cerr << std::endl;
+    }
+    
+    std::cerr << "Please check your .bodge file and ensure all required fields are properly set." << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -185,7 +198,7 @@ int main(int argc, char* argv[]) {
 
                 // Fatal check if essential information is missing after loading
                 if (!project.is_valid()) {
-                    projectLoadError();
+                    projectLoadError(project);
                     return 1;
                 }
 
@@ -234,7 +247,7 @@ int main(int argc, char* argv[]) {
 
                 // Fatal check if essential information is missing after loading
                 if (!project.is_valid()) {
-                    projectLoadError();
+                    projectLoadError(project);
                     return 1;
                 }
 
@@ -247,7 +260,7 @@ int main(int argc, char* argv[]) {
 
                 // Fatal check if essential information is missing after loading
                 if (!project.is_valid()) {
-                    projectLoadError();
+                    projectLoadError(project);
                     return 1;
                 }
 
@@ -261,7 +274,7 @@ int main(int argc, char* argv[]) {
 
                 // Fatal check if essential information is missing after loading
                 if (!project.is_valid()) {
-                    projectLoadError();
+                    projectLoadError(project);
                     return 1;
                 }
 
@@ -295,7 +308,7 @@ int main(int argc, char* argv[]) {
 
                     // Fatal check if essential information is missing after loading
                     if (!project.is_valid()) {
-                        projectLoadError();
+                        projectLoadError(project);
                         return 1;
                     }
 
@@ -322,7 +335,7 @@ int main(int argc, char* argv[]) {
 
                 // Fatal check if essential information is missing after loading
                 if (!project.is_valid()) {
-                    projectLoadError();
+                    projectLoadError(project);
                     return 1;
                 }
 
@@ -344,7 +357,7 @@ int main(int argc, char* argv[]) {
 
                 // Fatal check if essential information is missing after loading
                 if (!project.is_valid()) {
-                    projectLoadError();
+                    projectLoadError(project);
                     return 1;
                 }
 

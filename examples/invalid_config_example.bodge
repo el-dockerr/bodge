@@ -1,0 +1,12 @@
+# This is an example of an INVALID .bodge file
+# It demonstrates what errors will be reported
+
+name: InvalidProject
+
+# Missing required fields:
+# - compiler is missing
+# - output_name is missing  
+# - sources is missing
+
+# This will produce helpful error messages explaining exactly what's wrong
+

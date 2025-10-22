@@ -97,6 +97,55 @@ bool ProjectConfig::is_valid() const {
     return !compiler.empty() && !output_name.empty() && !sources.empty();
 }
 
+std::vector<std::string> ProjectConfig::get_validation_errors() const {
+    std::vector<std::string> errors;
+    
+    // Check if we have at least one valid target or legacy configuration
+    if (!targets.empty()) {
+        // Multi-target mode validation
+        if (compiler.empty()) {
+            errors.push_back("  - Missing 'compiler' field (e.g., compiler: g++)");
+        }
+        
+        bool has_valid_target = false;
+        for (const auto& [name, target] : targets) {
+            if (target.is_valid()) {
+                has_valid_target = true;
+                break;
+            }
+        }
+        
+        if (!has_valid_target) {
+            errors.push_back("  - No valid build targets found. Each target needs:");
+            
+            for (const auto& [name, target] : targets) {
+                if (!target.is_valid()) {
+                    if (target.output_name.empty() && target.sources.empty()) {
+                        errors.push_back("    * Target '" + name + "': missing both 'output_name' and 'sources'");
+                    } else if (target.output_name.empty()) {
+                        errors.push_back("    * Target '" + name + "': missing 'output_name'");
+                    } else if (target.sources.empty()) {
+                        errors.push_back("    * Target '" + name + "': missing 'sources' (e.g., " + name + ".sources: src/**.[c,cpp])");
+                    }
+                }
+            }
+        }
+    } else {
+        // Legacy mode validation
+        if (compiler.empty()) {
+            errors.push_back("  - Missing 'compiler' field (e.g., compiler: g++)");
+        }
+        if (output_name.empty()) {
+            errors.push_back("  - Missing 'output_name' field (e.g., output_name: myapp)");
+        }
+        if (sources.empty()) {
+            errors.push_back("  - Missing 'sources' field (e.g., sources: src/**.[c,cpp])");
+        }
+    }
+    
+    return errors;
+}
+
 void ProjectConfig::apply_defaults() {
     if (compiler.empty()) {
         compiler = "g++";

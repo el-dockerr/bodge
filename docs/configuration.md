@@ -36,10 +36,34 @@ Applied to all targets unless overridden:
 
 Targets are defined using the syntax: `targetname.property: value`
 
+### Source File Support
+
+Bodge supports both **C** and **C++** source files:
+- `.c` files - C source files
+- `.cpp` files - C++ source files
+- Use wildcards to include multiple file types: `src/**.[c,cpp]`
+
+**Examples:**
+```
+# C++ only
+myapp.sources: src/**.cpp
+
+# C only
+myapp.sources: src/**.c
+
+# Both C and C++ files
+myapp.sources: src/**.[c,cpp]
+
+# Explicit list
+myapp.sources: src/main.cpp, src/helper.c, src/utils.cpp
+```
+
 ### Target Properties
 
 #### Required
 - `targetname.sources`: Source files to compile (comma-separated)
+  - Supports `.c` and `.cpp` files
+  - Can use wildcards: `**` for recursive, `*` for single level, `[c,cpp]` for extensions
 
 #### Optional
 - `targetname.type`: Target type (`exe`, `shared`, `static`)
@@ -215,3 +239,138 @@ mylib.include_dirs: include, external/boost
 # Absolute paths (if needed)
 mylib.include_dirs: /usr/local/include, /opt/custom/include
 ```
+
+## Configuration Validation and Troubleshooting
+
+Bodge performs comprehensive validation of your `.bodge` file and provides detailed error messages when configuration is incomplete or invalid.
+
+### Required Fields
+
+#### Legacy Mode (Single Target)
+At minimum, you need:
+```
+compiler: g++
+output_name: myapp
+sources: src/**.[c,cpp]   # Supports both .c and .cpp files
+```
+
+#### Multi-Target Mode
+At minimum, you need:
+```
+compiler: g++
+
+# Each target needs at least:
+myapp.sources: src/**.[c,cpp]   # Supports both .c and .cpp files
+myapp.output_name: myapp  # Optional, defaults to target name
+```
+
+### Common Validation Errors
+
+#### Error: Missing compiler field
+```
+[FATAL] Configuration file '.bodge' is incomplete or invalid.
+
+The following issues were found:
+  - Missing 'compiler' field (e.g., compiler: g++)
+```
+
+**Solution**: Add a compiler specification to your `.bodge` file:
+```
+compiler: g++
+```
+
+#### Error: Missing sources for target
+```
+The following issues were found:
+  - No valid build targets found. Each target needs:
+    * Target 'myapp': missing 'sources' (e.g., myapp.sources: src/**.[c,cpp])
+```
+
+**Solution**: Add source files to your target:
+```
+myapp.sources: src/main.cpp, src/app.cpp
+# or use wildcards for C++ files
+myapp.sources: src/**.cpp
+# or for both C and C++ files
+myapp.sources: src/**.[c,cpp]
+# or for C files only
+myapp.sources: src/**.c
+```
+
+#### Error: Multiple missing fields
+```
+The following issues were found:
+  - Missing 'compiler' field (e.g., compiler: g++)
+  - Missing 'output_name' field (e.g., output_name: myapp)
+  - Missing 'sources' field (e.g., sources: src/**.[c,cpp])
+```
+
+**Solution**: Add all required fields:
+```
+name: MyProject
+compiler: g++
+output_name: myapp
+sources: src/**.[c,cpp]   # Include both C and C++ files
+```
+
+### Minimal Valid Configuration Examples
+
+#### Minimal Legacy Configuration
+```
+compiler: g++
+output_name: myapp
+sources: src/main.cpp
+```
+
+#### Minimal Legacy Configuration with C Files
+```
+compiler: gcc
+output_name: myapp
+sources: src/main.c, src/utils.c
+```
+
+#### Minimal Configuration with Mixed C/C++ Sources
+```
+compiler: g++
+output_name: myapp
+sources: src/**.[c,cpp]   # Automatically includes both .c and .cpp files
+```
+
+#### Minimal Multi-Target Configuration
+```
+compiler: g++
+
+myapp.sources: src/main.cpp
+```
+
+#### Multi-Target with C and C++ Targets
+```
+compiler: g++
+
+# C library
+mylib.sources: src/lib.c, src/helper.c
+mylib.type: static
+mylib.output_name: mylib
+
+# C++ application
+myapp.sources: src/main.cpp, src/app.cpp
+myapp.libraries: mylib
+```
+
+#### Minimal Configuration with Platform Support
+```
+compiler: g++
+output_name: myapp
+sources: src/main.cpp
+platforms: windows_x64, linux_x64
+
+@windows_x64.cxx_flags: -static-libgcc, -static-libstdc++
+```
+
+### Validation Tips
+
+1. **Start Simple**: Begin with a minimal configuration and add features incrementally
+2. **Check Syntax**: Ensure each line follows the `key: value` format
+3. **Watch Indentation**: While Bodge ignores leading/trailing whitespace, consistent formatting helps readability
+4. **Use Comments**: Document your configuration with `#` comments
+5. **Test Incrementally**: After adding new targets or settings, run `bodge list` to verify configuration

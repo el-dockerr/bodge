@@ -1,0 +1,29 @@
+# Example: C Project with multiple targets
+# This demonstrates building both C and C++ code in the same project
+
+name: Mixed C/C++ Project
+compiler: g++
+
+# C library (pure C code)
+mylib.type: static
+mylib.output_name: mylib
+mylib.sources: src/lib/**.c
+mylib.cxx_flags: -std=c11, -Wall
+
+# C++ application that uses the C library
+myapp.type: exe
+myapp.output_name: myapp
+myapp.sources: src/app/**.cpp
+myapp.libraries: mylib
+myapp.cxx_flags: -std=c++17, -Wall
+
+# Utility library with mixed C and C++ sources
+utils.type: static
+utils.output_name: utils
+utils.sources: src/utils/**.[c,cpp]
+utils.cxx_flags: -Wall, -O2
+
+# Platform-specific settings
+@windows_x64.cxx_flags: -static-libgcc, -static-libstdc++
+@linux.cxx_flags: -pthread
+

@@ -1,0 +1,18 @@
+# This is an example of an INVALID multi-target .bodge file
+# It demonstrates validation errors for incomplete targets
+
+name: MyProject
+compiler: g++
+
+# Target with missing sources
+mylib.type: static
+mylib.output_name: mylib
+# mylib.sources: MISSING!
+
+# Target with missing output_name
+myapp.type: exe
+# myapp.output_name: MISSING!
+myapp.sources: src/main.cpp
+
+# This will produce helpful error messages for each invalid target
+

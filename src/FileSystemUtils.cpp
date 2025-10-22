@@ -102,7 +102,7 @@ bool FileSystemUtils::is_cpp_source_file(const std::string& filename) {
     std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
     
     return extension == ".cpp" || extension == ".cxx" || 
-           extension == ".cc" || extension == ".c++";
+           extension == ".cc" || extension == ".c++" || extension == ".c";
 }
 
 bool FileSystemUtils::is_cpp_header_file(const std::string& filename) {

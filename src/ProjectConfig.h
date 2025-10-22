@@ -129,6 +129,12 @@ struct ProjectConfig {
     bool is_valid() const;
 
     /**
+     * @brief Gets detailed validation errors for the configuration
+     * @return Vector of error messages describing what's wrong with the configuration
+     */
+    std::vector<std::string> get_validation_errors() const;
+
+    /**
      * @brief Applies default values for missing configuration fields
      */
     void apply_defaults();
