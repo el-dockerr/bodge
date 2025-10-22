@@ -11,6 +11,7 @@ add_executable(bodge
     src/main.cpp
     src/ProjectConfig.cpp
     src/StringUtils.cpp
+    src/Strings.cpp
     src/ConfigParser.cpp
     src/BuildSystem.cpp
     src/git.cpp

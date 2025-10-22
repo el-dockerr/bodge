@@ -7,7 +7,7 @@ set CXX=g++
 set CXXFLAGS=-std=c++17 -Wall -Wextra -Wpedantic -O2 -static-libgcc -static-libstdc++
 set TARGET=bodge.exe
 set SRCDIR=src
-set SOURCES=%SRCDIR%\core.cpp %SRCDIR%\main.cpp %SRCDIR%\ProjectConfig.cpp %SRCDIR%\StringUtils.cpp %SRCDIR%\ConfigParser.cpp %SRCDIR%\BuildSystem.cpp %SRCDIR%\git.cpp %SRCDIR%\FileSystemUtils.cpp %SRCDIR%\Architecture.cpp %SRCDIR%\FileWatcher.cpp %SRCDIR%\BuildLogger.cpp %SRCDIR%\ProgressBar.cpp
+set SOURCES=%SRCDIR%\core.cpp %SRCDIR%\main.cpp %SRCDIR%\ProjectConfig.cpp %SRCDIR%\StringUtils.cpp %SRCDIR%\ConfigParser.cpp %SRCDIR%\BuildSystem.cpp %SRCDIR%\git.cpp %SRCDIR%\FileSystemUtils.cpp %SRCDIR%\Architecture.cpp %SRCDIR%\FileWatcher.cpp %SRCDIR%\BuildLogger.cpp %SRCDIR%\ProgressBar.cpp %SRCDIR%\Strings.cpp
 
 REM Check if first argument is provided, default to "all"
 if "%1"=="" (
