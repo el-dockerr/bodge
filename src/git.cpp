@@ -97,7 +97,11 @@ E_RESULT Git::manage_git_repository(const std::string& repo_url, const std::stri
     }
     
     // 1. Check if Git is available
+#ifdef _WIN32
+    if (std::system("git --version > NUL 2>&1") != 0) {
+#else
     if (std::system("git --version > /dev/null 2>&1") != 0) {
+#endif
         std::cerr << "[ERROR] Git is not available. Please install Git and ensure it is in your system's PATH." << std::endl;
         return S_ERROR_RESOURCE_NOT_FOUND;
     }

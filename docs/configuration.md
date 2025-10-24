@@ -40,23 +40,44 @@ Targets are defined using the syntax: `targetname.property: value`
 
 Bodge supports both **C** and **C++** source files:
 - `.c` files - C source files
-- `.cpp` files - C++ source files
+- `.cpp`, `.cxx`, `.cc`, `.c++` files - C++ source files
 - Use wildcards to include multiple file types: `src/**.[c,cpp]`
+
+**Wildcard Patterns:**
+- `**` - Recursive (all subdirectories)
+- `*` - Single level (current directory only)
+- `[c,cpp]` - Multiple extensions
 
 **Examples:**
 ```
-# C++ only
+# C++ only (recursive)
 myapp.sources: src/**.cpp
 
-# C only
+# C only (recursive)
 myapp.sources: src/**.c
 
-# Both C and C++ files
+# Both C and C++ files (recursive)
 myapp.sources: src/**.[c,cpp]
 
 # Explicit list
 myapp.sources: src/main.cpp, src/helper.c, src/utils.cpp
+
+# Multiple folders with wildcards
+myapp.sources: src/**, lib/**, external/helper.cpp
+
+# Mix of recursive and non-recursive
+myapp.sources: src/**, include/*, vendor/lib.c
+
+# Different patterns for different folders
+myapp.sources: cpp_code/**.cpp, c_code/**.c, common/**.[c,cpp]
 ```
+
+**How Multiple Folders Work:**
+When you specify multiple patterns separated by commas, Bodge will:
+1. Expand each pattern independently
+2. Collect all matching files
+3. Remove duplicates automatically
+4. Analyze dependencies to determine optimal build order
 
 ### Target Properties
 
@@ -194,24 +215,28 @@ compiler: g++
 global_cxx_flags: -std=c++17, -Wall, -Wextra
 global_include_dirs: include, external/headers
 
-# Main executable
+# Main executable with multiple source folders
 app.type: exe
 app.output_name: my_application
-app.sources: src/main.cpp, src/app.cpp, src/gui.cpp
+app.sources: src/app/**, src/gui/**, src/main.cpp
 app.libraries: mycore, myutils
 app.cxx_flags: -O2
 
-# Core library (shared)
+# Core library (shared) - using wildcard
 mycore.type: shared
 mycore.output_name: mycore
-mycore.sources: src/core/engine.cpp, src/core/system.cpp
+mycore.sources: src/core/**, platform/common/**.[c,cpp]
 mycore.cxx_flags: -O3, -fPIC
 mycore.libraries: pthread
 
-# Utilities library (static)
+# Platform-specific sources
+mycore@windows.sources: platform/windows/**.cpp
+mycore@linux.sources: platform/linux/**.cpp
+
+# Utilities library (static) - mixed C and C++
 myutils.type: static
 myutils.output_name: myutils
-myutils.sources: src/utils/helper.cpp, src/utils/math.cpp
+myutils.sources: src/utils/**.cpp, src/legacy/**.c
 
 # Build sequences
 sequence.all: build:myutils build:mycore build:app

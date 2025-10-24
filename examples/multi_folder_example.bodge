@@ -1,0 +1,36 @@
+# Example: Multiple Source Folders with Wildcards
+# This demonstrates using multiple source directories in a single project
+
+name: Multi-Folder Project
+compiler: g++
+
+# Example 1: Multiple recursive folders
+# This will include all C/C++ files from src/, lib/, and a specific file
+myapp.type: exe
+myapp.output_name: myapp
+myapp.sources: src/**, lib/**, external/helper.cpp
+myapp.cxx_flags: -std=c++17, -Wall
+
+# Example 2: Mix of recursive and non-recursive patterns
+# src/** = all files in src and subdirectories (recursive)
+# include/* = only files directly in include (non-recursive)
+# utils/specific.c = specific file
+mylib.type: static
+mylib.output_name: mylib
+mylib.sources: src/core/**, src/util/*, vendor/lib.c
+mylib.cxx_flags: -O2
+
+# Example 3: Different file type patterns in different folders
+# This searches for .cpp files in one folder and .c files in another
+mixed.type: shared
+mixed.output_name: mixed
+mixed.sources: cpp_code/**.cpp, c_code/**.c, common/**.[c,cpp]
+mixed.cxx_flags: -fPIC
+
+# Platform-specific additional sources
+@windows.sources: platform/windows/**.cpp
+@linux.sources: platform/linux/**.cpp
+
+# Build all
+sequence.all: build:mylib build:myapp build:mixed
+
