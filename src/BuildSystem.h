@@ -64,6 +64,13 @@ public:
 private:
     const ProjectConfig config_;
 
+
+    /**
+     * @brief Performs pre-build checks
+     * @return S_OK if checks were successful, S_ERROR_INVALID_ARGUMENT otherwise
+     */
+    E_RESULT prebuild_checks() const;
+
     /**
      * @brief Constructs the complete compiler command string
      * @return The complete build command as a string

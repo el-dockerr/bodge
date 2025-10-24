@@ -45,18 +45,29 @@ namespace {
 
 BuildSystem::BuildSystem(const ProjectConfig& config) : config_(config) {}
 
-E_RESULT BuildSystem::build() const {
-    ProgressBar::display_header();
-
-    // Validate system support
-    if (!validate_system_support()) {
-        ProgressBar::display_warning("System command execution is not fully supported on this platform. Build may fail.");
-    }
-
+E_RESULT BuildSystem::prebuild_checks() const{
     // Check for essential inputs
     if (!config_.is_valid()) {
         ProgressBar::display_error("Configuration is invalid. Please check your .bodge file.");
         return S_ERROR_INVALID_ARGUMENT;
+    }
+
+    // Handle git dependencies first
+    if (build_git_dependencies() != S_OK) {
+        ProgressBar::display_error("Failed to handle git dependencies.");
+        return S_BUILD_FAILED;
+    }
+
+    return S_OK;
+}
+
+
+E_RESULT BuildSystem::build() const {
+    ProgressBar::display_header();
+
+    E_RESULT prechk_result = prebuild_checks();
+    if (prechk_result != S_OK) {
+        return prechk_result;
     }
 
     auto build_start_time = std::chrono::steady_clock::now();
@@ -210,6 +221,12 @@ E_RESULT BuildSystem::build_target(const std::string& target_name) const {
 }
 
 E_RESULT BuildSystem::build_target_for_platform(const std::string& target_name, const Platform& platform) const {
+
+    E_RESULT prechk_result = prebuild_checks();
+    if (prechk_result != S_OK) {
+        return prechk_result;
+    }
+
     auto it = config_.targets.find(target_name);
     if (it == config_.targets.end()) {
         ProgressBar::display_error("Target '" + target_name + "' not found.");
