@@ -5,6 +5,10 @@ It aims to be a replacement for CMAKE one day and make it more easy and reliable
 
 bodge [/bɒdʒ/ verb: make or repair (something) badly or clumsily.]
 
+## Please leave a Star ⭐
+Every Star show me, that this project is worth to improve for a bigger audience.
+Fell free to spread the word. 
+
 [Find a full documentation here](https://el-dockerr.github.io/bodge)
 
 This buildsystem is the draft to overcome typical issues of CMAKE. The vast of dependencies and the chaos it causes should be solved in a 
