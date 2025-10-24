@@ -49,15 +49,16 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
         return;
     }
 
-    // Check for target-specific configuration [target.property]
-    if (key.find('.') != std::string::npos) {
-        process_target_config_line(key, value_str, config);
+    // Check for sequence configuration [sequence.name]
+    // This must come before the general target check since "sequence." also contains a dot
+    if (key.find("sequence.") == 0) {
+        process_sequence_config_line(key, value_str, config);
         return;
     }
     
-    // Check for sequence configuration [sequence.name]
-    if (key.find("sequence.") == 0) {
-        process_sequence_config_line(key, value_str, config);
+    // Check for target-specific configuration [target.property]
+    if (key.find('.') != std::string::npos) {
+        process_target_config_line(key, value_str, config);
         return;
     }
 
