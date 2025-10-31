@@ -4,7 +4,7 @@
 #define CORE_H
 
 // Version of the build system
-#define VERSION "1.0.3.3"
+#define VERSION "1.0.3.4"
 
 // Function to get the version string
 const char* get_version();
