@@ -1,7 +1,7 @@
 /**
  * Bodge - The Idiotic Build System
  * A minimalistic but powerful C++ build system that reads from a simple configuration file
- * 
+ * and automates the build process for C++ projects across multiple platforms and architectures.
  * Author: Swen "El Dockerr" Kalski
  * Email: kalski.swen@gmail.com
  * License: Bodge License (BL-V1.0)
@@ -23,6 +23,7 @@ struct CommandLineArgs {
     Platform platform;
     bool platform_specified = false;
     bool arch_specified = false;
+    bool argument_error = false;
     int poll_interval = 1000;  // Default poll interval for daemon mode (ms)
     std::string log_file = "bodge_daemon.log";  // Default log file for daemon mode
 };
@@ -58,11 +59,14 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
                 args.arch_specified = true;
             } else {
                 std::cerr << STR(WARN_UNKNOWN_ARCH) << arch_str << std::endl;
+		args.argument_error = true;
+		continue;
             }
         } else if (arg.find("--interval=") == 0) {
             std::string interval_str = arg.substr(11); // Remove "--interval="
             if (interval_str.empty()) {
                 std::cerr << STR(WARN_EMPTY_INTERVAL) << std::endl;
+		args.argument_error = true;
                 continue;
             }
             try {
@@ -73,34 +77,40 @@ CommandLineArgs parse_command_line(int argc, char* argv[]) {
                 // Check for conversion errors
                 if (end_ptr == interval_str.c_str() || *end_ptr != '\0') {
                     std::cerr << STR(WARN_INVALID_INTERVAL) << std::endl;
+		    args.argument_error = true;
                     continue;
                 }
                 
                 // Check for overflow and range
                 if (value < 100 || value > 3600000) { // Max 1 hour
                     std::cerr << STR(WARN_INTERVAL_OUT_OF_RANGE) << std::endl;
+		    args.argument_error = true;
                     continue;
                 }
                 
                 args.poll_interval = static_cast<int>(value);
             } catch (...) {
                 std::cerr << STR(WARN_INVALID_INTERVAL) << std::endl;
+		args.argument_error = true;
             }
         } else if (arg.find("--log=") == 0) {
             std::string log_file = arg.substr(6); // Remove "--log="
             if (log_file.empty()) {
                 std::cerr << STR(WARN_EMPTY_LOG_FILE) << std::endl;
+		args.argument_error = true;
                 continue;
             }
             // Validate log file path
             if (log_file.find("..") != std::string::npos || log_file.length() > 256) {
                 std::cerr << STR(WARN_INVALID_LOG_FILE) << std::endl;
+		args.argument_error = true;
                 continue;
             }
             args.log_file = log_file;
         } else if (arg.find("--") == 0) {
             // Skip other unknown options
             std::cerr << STR(WARN_UNKNOWN_OPTION) << arg << std::endl;
+	    args.argument_error = true;
             continue;
         } else if (args.command.empty()) {
             args.command = arg;
@@ -138,6 +148,10 @@ int main(int argc, char* argv[]) {
 
         // Parse command line arguments
         CommandLineArgs args = parse_command_line(argc, argv);
+	if (args.argument_error) {
+	    std::cerr << STR(ERR_INVALID_ARGUMENTS) << std::endl;
+	    return 1;
+	}
 
         // Check for command line arguments
         if (argc > 1 && !args.command.empty()) {
