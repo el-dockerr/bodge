@@ -67,6 +67,8 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
         config.name = value_str;
     } else if (key == "compiler") {
         config.compiler = value_str;
+    } else if (key == "global_pre_cxx_flags") {
+        config.global_pre_cxx_flags = StringUtils::split(value_str, ',');
     } else if (key == "global_cxx_flags") {
         config.global_cxx_flags = StringUtils::split(value_str, ',');
     } else if (key == "global_include_dirs") {
@@ -85,6 +87,8 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
     // Legacy support
     else if (key == "output_name") {
         config.output_name = value_str;
+    } else if (key == "pre_cxx_flags") {
+        config.pre_cxx_flags = StringUtils::split(value_str, ',');
     } else if (key == "cxx_flags") {
         config.cxx_flags = StringUtils::split(value_str, ',');
     } else if (key == "sources") {
@@ -129,6 +133,8 @@ void ConfigParser::process_target_config_line(const std::string& key, const std:
     } else if (property == "sources") {
         std::vector<std::string> raw_sources = StringUtils::split(value, ',');
         target.sources = expand_sources(raw_sources);
+    } else if (property == "pre_cxx_flags") {
+        target.pre_cxx_flags = StringUtils::split(value, ',');
     } else if (property == "cxx_flags") {
         target.cxx_flags = StringUtils::split(value, ',');
     } else if (property == "include_dirs") {
@@ -249,7 +255,9 @@ void ConfigParser::process_platform_config_line(const std::string& key, const st
 }
 
 void ConfigParser::apply_platform_property(PlatformConfig& plat_config, const std::string& property, const std::string& value) {
-    if (property == "cxx_flags") {
+    if (property == "pre_cxx_flags") {
+        plat_config.pre_cxx_flags = StringUtils::split(value, ',');
+    } else if (property == "cxx_flags") {
         plat_config.cxx_flags = StringUtils::split(value, ',');
     } else if (property == "sources") {
         std::vector<std::string> raw_sources = StringUtils::split(value, ',');

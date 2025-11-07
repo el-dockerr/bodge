@@ -27,6 +27,7 @@ PlatformConfig BuildTarget::get_platform_config(const Platform& platform) const 
     PlatformConfig config(platform);
     
     // Start with base configuration
+    config.pre_cxx_flags = pre_cxx_flags;
     config.cxx_flags = cxx_flags;
     config.sources = sources;
     config.include_dirs = include_dirs;
@@ -41,6 +42,9 @@ PlatformConfig BuildTarget::get_platform_config(const Platform& platform) const 
     for (const auto& [plat, plat_config] : platform_configs) {
         if (plat.matches(platform)) {
             // Merge configurations (platform-specific takes precedence)
+            if (!plat_config.pre_cxx_flags.empty()) {
+                config.pre_cxx_flags.insert(config.pre_cxx_flags.end(), plat_config.pre_cxx_flags.begin(), plat_config.pre_cxx_flags.end());
+            }
             if (!plat_config.cxx_flags.empty()) {
                 config.cxx_flags.insert(config.cxx_flags.end(), plat_config.cxx_flags.begin(), plat_config.cxx_flags.end());
             }
@@ -169,6 +173,7 @@ void ProjectConfig::convert_legacy_to_targets() {
     default_target.name = "default";
     default_target.type = BuildType::EXECUTABLE;
     default_target.output_name = output_name;
+    default_target.pre_cxx_flags = pre_cxx_flags;
     default_target.cxx_flags = cxx_flags;
     default_target.sources = sources;
     default_target.include_dirs = include_dirs;

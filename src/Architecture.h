@@ -115,6 +115,7 @@ public:
  */
 struct PlatformConfig {
     Platform target_platform;
+    std::vector<std::string> pre_cxx_flags;  // Flags applied before sources
     std::vector<std::string> cxx_flags;
     std::vector<std::string> sources;
     std::vector<std::string> include_dirs;
