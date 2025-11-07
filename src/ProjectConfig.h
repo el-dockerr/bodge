@@ -47,6 +47,7 @@ struct BuildTarget {
     std::string name;
     BuildType type;
     std::string output_name;
+    std::vector<std::string> pre_cxx_flags;  // Flags applied before sources
     std::vector<std::string> cxx_flags;
     std::vector<std::string> sources;
     std::vector<std::string> include_dirs;
@@ -94,6 +95,7 @@ struct ProjectConfig {
     std::string compiler;
     
     // Global defaults
+    std::vector<std::string> global_pre_cxx_flags;  // Flags applied before sources
     std::vector<std::string> global_cxx_flags;
     std::vector<std::string> global_include_dirs;
     std::vector<std::string> global_library_dirs;
@@ -116,6 +118,7 @@ struct ProjectConfig {
     
     // Legacy support - converted to default target
     std::string output_name;
+    std::vector<std::string> pre_cxx_flags;
     std::vector<std::string> cxx_flags;
     std::vector<std::string> sources;
     std::vector<std::string> include_dirs;

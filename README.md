@@ -83,6 +83,7 @@ g++ -std=c++17 -Wall -Wextra -Isrc src/*.cpp -o bodge
 ### **Advanced Build System**
 - Cross-platform compatibility (Windows/Linux)
 - Static linking support to eliminate DLL dependencies
+- Pre-compilation flags (`pre_cxx_flags`) for SDK setup and early initialization
 - Comprehensive error handling and logging
 
 ### **Automatic Source Collection**
@@ -161,6 +162,20 @@ include_dirs: include
 libraries: pthread, m
 ```
 
+#### SDK Integration with Pre-CXX Flags:
+```
+name: Vulkan Project
+compiler: g++
+output_name: vulkan_app
+
+# Pre-flags are applied before sources (useful for SDK paths)
+pre_cxx_flags: -I$VULKAN_SDK/include, -L$VULKAN_SDK/lib
+cxx_flags: -std=c++17, -Wall, -O2
+
+sources: src/**
+libraries: vulkan
+```
+
 #### Legacy Configuration (Manual File Listing):
 ```
 name: MyProject
@@ -178,6 +193,7 @@ name: Multi-Target Project
 compiler: g++
 
 # Global settings for all targets
+global_pre_cxx_flags: -DEARLY_INIT
 global_cxx_flags: -std=c++17, -Wall, -static-libgcc, -static-libstdc++
 global_include_dirs: include
 
@@ -191,6 +207,7 @@ main.libraries: mylib
 mylib.type: shared
 mylib.output_name: mylib
 mylib.sources: src/lib/**
+mylib.pre_cxx_flags: -DLIB_EXPORTS
 mylib.cxx_flags: -O2, -fPIC
 
 # Static library target (automatic source collection)
@@ -215,6 +232,10 @@ compiler: g++
 
 # Build for multiple platforms
 platforms: windows_x64, linux_x64, windows_x86
+
+# Global platform-specific pre-flags (applied before sources)
+@windows.pre_cxx_flags: -IC:/SDK/include
+@linux.pre_cxx_flags: -I/usr/include/sdk
 
 # Global platform-specific settings
 @windows.cxx_flags: -static-libgcc, -static-libstdc++
@@ -252,6 +273,23 @@ app@linux_x64.output_suffix: _linux64
 - `unix_x86` / `unix_x64` - Unix 32-bit/64-bit
 - `apple_x86` / `apple_x64` - macOS 32-bit/64-bit
 - `*_arm` / `*_arm64` - ARM 32-bit/64-bit (any OS)
+
+### Compiler Flags Configuration
+Bodge provides two types of compiler flags for fine-grained control:
+
+- **`pre_cxx_flags`** - Applied **before** sources in the build command
+  - Perfect for SDK setup and early initialization
+  - Use for include paths that must be resolved before source compilation
+  - Example: `-I$VULKAN_SDK/include`, `-DSDK_EARLY_INIT`
+  
+- **`cxx_flags`** - Standard compiler flags applied after pre-flags
+  - Use for compilation options like `-std=c++17`, `-O2`, `-Wall`
+  - Applied in order: global → platform-specific → target-specific
+
+**Build Command Order:**
+```
+compiler → pre_cxx_flags → cxx_flags → includes → sources → output → libraries
+```
 
 ### Platform Configuration Syntax
 - `platforms: platform1, platform2` - Set default target platforms

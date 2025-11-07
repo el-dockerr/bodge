@@ -143,7 +143,8 @@ std::string BuildSystem::generate_command() const {
         return "";
     }
     
-    if (!validate_compiler_arguments(config_.cxx_flags) ||
+    if (!validate_compiler_arguments(config_.pre_cxx_flags) ||
+        !validate_compiler_arguments(config_.cxx_flags) ||
         !validate_compiler_arguments(config_.include_dirs) ||
         !validate_compiler_arguments(config_.sources) ||
         !validate_compiler_arguments(config_.library_dirs) ||
@@ -157,26 +158,29 @@ std::string BuildSystem::generate_command() const {
     // 1. Compiler
     command << config_.compiler;
 
-    // 2. Standard CXX Flags
+    // 2. Pre-CXX Flags (applied before everything else)
+    command << " " << StringUtils::join(config_.pre_cxx_flags, "", " ");
+
+    // 3. Standard CXX Flags
     command << " " << StringUtils::join(config_.cxx_flags, "", " ");
 
-    // 3. Include Directories (-I)
+    // 4. Include Directories (-I)
     command << StringUtils::join(config_.include_dirs, " -I", " ");
 
-    // 4. Source Files (must come before -o and linking flags)
+    // 5. Source Files (must come before -o and linking flags)
     command << StringUtils::join(config_.sources, "", " ");
 
-    // 5. Output file (-o)
+    // 6. Output file (-o)
     if (!is_safe_compiler_argument(config_.output_name)) {
         ProgressBar::display_error("Invalid output name specified");
         return "";
     }
     command << " -o " << config_.output_name;
 
-    // 6. Library Directories (-L)
+    // 7. Library Directories (-L)
     command << StringUtils::join(config_.library_dirs, " -L", " ");
 
-    // 7. Libraries (-l)
+    // 8. Libraries (-l)
     command << StringUtils::join(config_.libraries, " -l", " ");
 
     return command.str();
@@ -295,7 +299,9 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
         return "";
     }
     
-    if (!validate_compiler_arguments(config_.global_cxx_flags) ||
+    if (!validate_compiler_arguments(config_.global_pre_cxx_flags) ||
+        !validate_compiler_arguments(config_.global_cxx_flags) ||
+        !validate_compiler_arguments(target.pre_cxx_flags) ||
         !validate_compiler_arguments(target.cxx_flags) ||
         !validate_compiler_arguments(config_.global_include_dirs) ||
         !validate_compiler_arguments(target.include_dirs) ||
@@ -313,13 +319,19 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
     // 1. Compiler
     command << config_.compiler;
     
-    // 2. Global CXX Flags
+    // 2. Global Pre-CXX Flags
+    command << " " << StringUtils::join(config_.global_pre_cxx_flags, "", " ");
+    
+    // 3. Target-specific Pre-CXX Flags
+    command << " " << StringUtils::join(target.pre_cxx_flags, "", " ");
+    
+    // 4. Global CXX Flags
     command << " " << StringUtils::join(config_.global_cxx_flags, "", " ");
     
-    // 3. Target-specific CXX Flags
+    // 5. Target-specific CXX Flags
     command << " " << StringUtils::join(target.cxx_flags, "", " ");
     
-    // 4. Build type specific flags
+    // 6. Build type specific flags
     switch (target.type) {
         case BuildType::SHARED_LIBRARY:
 #ifdef _WIN32
@@ -337,16 +349,16 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
             break;
     }
     
-    // 5. Global Include Directories (-I)
+    // 7. Global Include Directories (-I)
     command << StringUtils::join(config_.global_include_dirs, " -I", " ");
     
-    // 6. Target-specific Include Directories (-I)
+    // 8. Target-specific Include Directories (-I)
     command << StringUtils::join(target.include_dirs, " -I", " ");
     
-    // 7. Source Files
+    // 9. Source Files
     command << StringUtils::join(target.sources, "", " ");
     
-    // 8. Output file (-o)
+    // 10. Output file (-o)
     std::string output_name = target.output_name + target.get_output_extension();
     if (!is_safe_compiler_argument(output_name)) {
         ProgressBar::display_error("Invalid output name specified");
@@ -354,16 +366,16 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
     }
     command << " -o " << output_name;
     
-    // 9. Global Library Directories (-L)
+    // 11. Global Library Directories (-L)
     command << StringUtils::join(config_.global_library_dirs, " -L", " ");
     
-    // 10. Target-specific Library Directories (-L)
+    // 12. Target-specific Library Directories (-L)
     command << StringUtils::join(target.library_dirs, " -L", " ");
     
-    // 11. Global Libraries (-l)
+    // 13. Global Libraries (-l)
     command << StringUtils::join(config_.global_libraries, " -l", " ");
     
-    // 12. Target-specific Libraries (-l)
+    // 14. Target-specific Libraries (-l)
     command << StringUtils::join(target.libraries, " -l", " ");
     
     return command.str();
@@ -548,7 +560,9 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     PlatformConfig platform_config = target.get_platform_config(platform);
     
     // Validate all arguments
-    if (!validate_compiler_arguments(config_.global_cxx_flags) ||
+    if (!validate_compiler_arguments(config_.global_pre_cxx_flags) ||
+        !validate_compiler_arguments(config_.global_cxx_flags) ||
+        !validate_compiler_arguments(platform_config.pre_cxx_flags) ||
         !validate_compiler_arguments(platform_config.cxx_flags) ||
         !validate_compiler_arguments(config_.global_include_dirs) ||
         !validate_compiler_arguments(platform_config.include_dirs) ||
@@ -566,11 +580,26 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     // 1. Compiler
     command << config_.compiler;
     
-    // 2. Global CXX Flags
+    // 2. Global Pre-CXX Flags
+    command << " " << StringUtils::join(config_.global_pre_cxx_flags, "", " ");
+    
+    // 3. Global platform-specific pre-flags
+    auto global_plat_it = config_.global_platform_configs.find(platform);
+    if (global_plat_it != config_.global_platform_configs.end()) {
+        if (!validate_compiler_arguments(global_plat_it->second.pre_cxx_flags)) {
+            ProgressBar::display_error("Invalid global platform-specific pre-compiler arguments");
+            return "";
+        }
+        command << " " << StringUtils::join(global_plat_it->second.pre_cxx_flags, "", " ");
+    }
+    
+    // 4. Target-specific Pre-CXX Flags (including platform-specific)
+    command << " " << StringUtils::join(platform_config.pre_cxx_flags, "", " ");
+    
+    // 5. Global CXX Flags
     command << " " << StringUtils::join(config_.global_cxx_flags, "", " ");
     
-    // 3. Global platform-specific flags
-    auto global_plat_it = config_.global_platform_configs.find(platform);
+    // 6. Global platform-specific flags
     if (global_plat_it != config_.global_platform_configs.end()) {
         if (!validate_compiler_arguments(global_plat_it->second.cxx_flags)) {
             ProgressBar::display_error("Invalid global platform-specific compiler arguments");
@@ -579,10 +608,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
         command << " " << StringUtils::join(global_plat_it->second.cxx_flags, "", " ");
     }
     
-    // 4. Target-specific CXX Flags (including platform-specific)
+    // 7. Target-specific CXX Flags (including platform-specific)
     command << " " << StringUtils::join(platform_config.cxx_flags, "", " ");
     
-    // 5. Build type specific flags
+    // 8. Build type specific flags
     switch (target.type) {
         case BuildType::SHARED_LIBRARY:
             if (platform.operating_system == OS::WINDOWS) {
@@ -600,10 +629,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
             break;
     }
     
-    // 6. Global Include Directories (-I)
+    // 9. Global Include Directories (-I)
     command << StringUtils::join(config_.global_include_dirs, " -I", " ");
     
-    // 7. Global platform-specific include directories
+    // 10. Global platform-specific include directories
     if (global_plat_it != config_.global_platform_configs.end()) {
         if (!validate_compiler_arguments(global_plat_it->second.include_dirs)) {
             ProgressBar::display_error("Invalid global platform-specific include directories");
@@ -612,13 +641,13 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
         command << StringUtils::join(global_plat_it->second.include_dirs, " -I", " ");
     }
     
-    // 8. Platform-specific Include Directories (-I)
+    // 11. Platform-specific Include Directories (-I)
     command << StringUtils::join(platform_config.include_dirs, " -I", " ");
     
-    // 9. Platform-specific Source Files
+    // 12. Platform-specific Source Files
     command << StringUtils::join(platform_config.sources, "", " ");
     
-    // 10. Output file (-o) with platform-specific suffix
+    // 13. Output file (-o) with platform-specific suffix
     std::string output_name = target.output_name + platform_config.output_name_suffix + target.get_output_extension(platform);
     if (!is_safe_compiler_argument(output_name)) {
         ProgressBar::display_error("Invalid output name specified");
@@ -626,10 +655,10 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     }
     command << " -o " << output_name;
     
-    // 11. Global Library Directories (-L)
+    // 14. Global Library Directories (-L)
     command << StringUtils::join(config_.global_library_dirs, " -L", " ");
     
-    // 12. Global platform-specific library directories
+    // 15. Global platform-specific library directories
     if (global_plat_it != config_.global_platform_configs.end()) {
         if (!validate_compiler_arguments(global_plat_it->second.library_dirs)) {
             ProgressBar::display_error("Invalid global platform-specific library directories");
@@ -638,13 +667,13 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
         command << StringUtils::join(global_plat_it->second.library_dirs, " -L", " ");
     }
     
-    // 13. Platform-specific Library Directories (-L)
+    // 16. Platform-specific Library Directories (-L)
     command << StringUtils::join(platform_config.library_dirs, " -L", " ");
     
-    // 14. Global Libraries (-l)
+    // 17. Global Libraries (-l)
     command << StringUtils::join(config_.global_libraries, " -l", " ");
     
-    // 15. Global platform-specific libraries
+    // 18. Global platform-specific libraries
     if (global_plat_it != config_.global_platform_configs.end()) {
         if (!validate_compiler_arguments(global_plat_it->second.libraries)) {
             ProgressBar::display_error("Invalid global platform-specific libraries");
@@ -653,7 +682,7 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
         command << StringUtils::join(global_plat_it->second.libraries, " -l", " ");
     }
     
-    // 16. Platform-specific Libraries (-l)
+    // 19. Platform-specific Libraries (-l)
     command << StringUtils::join(platform_config.libraries, " -l", " ");
     
     return command.str();
