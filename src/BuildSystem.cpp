@@ -148,7 +148,8 @@ std::string BuildSystem::generate_command() const {
         !validate_compiler_arguments(config_.include_dirs) ||
         !validate_compiler_arguments(config_.sources) ||
         !validate_compiler_arguments(config_.library_dirs) ||
-        !validate_compiler_arguments(config_.libraries)) {
+        !validate_compiler_arguments(config_.libraries) ||
+        !validate_compiler_arguments(config_.linker_flags)) {
         ProgressBar::display_error("Invalid compiler arguments detected");
         return "";
     }
@@ -182,6 +183,9 @@ std::string BuildSystem::generate_command() const {
 
     // 8. Libraries (-l)
     command << StringUtils::join(config_.libraries, " -l", " ");
+
+    // 9. Linker Flags
+    command << " " << StringUtils::join(config_.linker_flags, "", " ");
 
     return command.str();
 }
@@ -309,7 +313,9 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
         !validate_compiler_arguments(config_.global_library_dirs) ||
         !validate_compiler_arguments(target.library_dirs) ||
         !validate_compiler_arguments(config_.global_libraries) ||
-        !validate_compiler_arguments(target.libraries)) {
+        !validate_compiler_arguments(target.libraries) ||
+        !validate_compiler_arguments(config_.global_linker_flags) ||
+        !validate_compiler_arguments(target.linker_flags)) {
         ProgressBar::display_error("Invalid compiler arguments detected in target");
         return "";
     }
@@ -377,6 +383,12 @@ std::string BuildSystem::generate_target_command(const BuildTarget& target) cons
     
     // 14. Target-specific Libraries (-l)
     command << StringUtils::join(target.libraries, " -l", " ");
+    
+    // 15. Global Linker Flags
+    command << " " << StringUtils::join(config_.global_linker_flags, "", " ");
+    
+    // 16. Target-specific Linker Flags
+    command << " " << StringUtils::join(target.linker_flags, "", " ");
     
     return command.str();
 }
@@ -570,7 +582,9 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
         !validate_compiler_arguments(config_.global_library_dirs) ||
         !validate_compiler_arguments(platform_config.library_dirs) ||
         !validate_compiler_arguments(config_.global_libraries) ||
-        !validate_compiler_arguments(platform_config.libraries)) {
+        !validate_compiler_arguments(platform_config.libraries) ||
+        !validate_compiler_arguments(config_.global_linker_flags) ||
+        !validate_compiler_arguments(platform_config.linker_flags)) {
         ProgressBar::display_error("Invalid compiler arguments detected in platform-specific target");
         return "";
     }
@@ -684,6 +698,21 @@ std::string BuildSystem::generate_target_command_for_platform(const BuildTarget&
     
     // 19. Platform-specific Libraries (-l)
     command << StringUtils::join(platform_config.libraries, " -l", " ");
+    
+    // 20. Global Linker Flags
+    command << " " << StringUtils::join(config_.global_linker_flags, "", " ");
+    
+    // 21. Global platform-specific linker flags
+    if (global_plat_it != config_.global_platform_configs.end()) {
+        if (!validate_compiler_arguments(global_plat_it->second.linker_flags)) {
+            ProgressBar::display_error("Invalid global platform-specific linker flags");
+            return "";
+        }
+        command << " " << StringUtils::join(global_plat_it->second.linker_flags, "", " ");
+    }
+    
+    // 22. Platform-specific Linker Flags
+    command << " " << StringUtils::join(platform_config.linker_flags, "", " ");
     
     return command.str();
 }

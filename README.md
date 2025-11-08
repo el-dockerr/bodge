@@ -111,7 +111,7 @@ g++ -std=c++17 -Wall -Wextra -Isrc src/*.cpp -o bodge
 ### **Cross-Platform & Architecture-Aware Building**
 - Automatic platform detection (Windows, Linux, Unix, macOS)
 - Architecture-specific builds (x86, x64, ARM, ARM64)
-- Platform-specific compiler flags and configurations
+- Platform-specific compiler flags, linker flags, and configurations
 - Build for multiple platforms from a single configuration
 - Platform-specific source files and dependencies
 
@@ -256,6 +256,11 @@ app@linux.sources: src/linux_impl.cpp
 app@windows.libraries: kernel32, user32
 app@linux.libraries: dl, rt
 
+# Platform-specific linker flags
+@windows_x64.linker_flags: -lws2_32, -lpthread
+@linux_x64.linker_flags: -pthread, -ldl
+app@windows_x64.linker_flags: -lwinmm
+
 # Platform-specific output suffixes
 app@windows_x64.output_suffix: _x64
 app@windows_x86.output_suffix: _x86
@@ -288,7 +293,51 @@ Bodge provides two types of compiler flags for fine-grained control:
 
 **Build Command Order:**
 ```
-compiler → pre_cxx_flags → cxx_flags → includes → sources → output → libraries
+compiler → pre_cxx_flags → cxx_flags → includes → sources → output → libraries → linker_flags
+```
+
+### Linker Flags Configuration
+Bodge supports linker flags at multiple levels for fine-grained control over the linking stage:
+
+- **`linker_flags`** - Raw linker flags passed directly to the linker
+  - Applied **after** libraries in the build command
+  - Perfect for system libraries, linker-specific options, and platform-specific linking
+  - Use `-l` prefix for libraries (e.g., `-lws2_32`)
+  - Use `-Wl,` prefix for linker-specific options (e.g., `-Wl,--no-undefined`)
+
+**Linker flags can be specified at multiple levels:**
+
+1. **Global**: `global_linker_flags: -static, -Wl,--no-undefined`
+2. **Legacy (single target)**: `linker_flags: -lm, -ldl`
+3. **Target-specific**: `myapp.linker_flags: -lws2_32`
+4. **Platform-specific (global)**: `@windows_x64.linker_flags: -lws2_32, -lpthread`
+5. **Target + Platform**: `myapp@windows_x64.linker_flags: -lwinmm`
+
+**Linker flags are applied in order:**
+```
+global_linker_flags → @platform.linker_flags → target.linker_flags → target@platform.linker_flags
+```
+
+**Common Use Cases:**
+
+Windows networking and threading:
+```
+@windows_x64.linker_flags: -lws2_32, -lmswsock, -lpthread
+```
+
+Linux threading and real-time:
+```
+@linux_x64.linker_flags: -pthread, -lrt
+```
+
+macOS frameworks:
+```
+@apple_x64.linker_flags: -framework Foundation, -framework CoreFoundation
+```
+
+Static linking:
+```
+global_linker_flags: -static, -static-libgcc, -static-libstdc++
 ```
 
 ### Platform Configuration Syntax

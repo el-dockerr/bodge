@@ -33,6 +33,7 @@ PlatformConfig BuildTarget::get_platform_config(const Platform& platform) const 
     config.include_dirs = include_dirs;
     config.library_dirs = library_dirs;
     config.libraries = libraries;
+    config.linker_flags = linker_flags;
     
     // Add platform-specific compiler flags
     auto platform_flags = ArchitectureDetector::get_platform_compiler_flags(platform);
@@ -59,6 +60,9 @@ PlatformConfig BuildTarget::get_platform_config(const Platform& platform) const 
             }
             if (!plat_config.libraries.empty()) {
                 config.libraries.insert(config.libraries.end(), plat_config.libraries.begin(), plat_config.libraries.end());
+            }
+            if (!plat_config.linker_flags.empty()) {
+                config.linker_flags.insert(config.linker_flags.end(), plat_config.linker_flags.begin(), plat_config.linker_flags.end());
             }
             if (!plat_config.output_name_suffix.empty()) {
                 config.output_name_suffix = plat_config.output_name_suffix;
@@ -179,6 +183,7 @@ void ProjectConfig::convert_legacy_to_targets() {
     default_target.include_dirs = include_dirs;
     default_target.library_dirs = library_dirs;
     default_target.libraries = libraries;
+    default_target.linker_flags = linker_flags;
     
     targets["default"] = default_target;
 }

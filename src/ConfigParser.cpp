@@ -77,6 +77,8 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
         config.global_library_dirs = StringUtils::split(value_str, ',');
     } else if (key == "global_libraries") {
         config.global_libraries = StringUtils::split(value_str, ',');
+    } else if (key == "global_linker_flags") {
+        config.global_linker_flags = StringUtils::split(value_str, ',');
     } else if (key == "dependencies_url") {
         config.dependencies_url = StringUtils::split(value_str, ',');
     } else if (key == "dependencies_path") {
@@ -100,6 +102,8 @@ void ConfigParser::process_config_line(const std::string& line, ProjectConfig& c
         config.library_dirs = StringUtils::split(value_str, ',');
     } else if (key == "libraries") {
         config.libraries = StringUtils::split(value_str, ',');
+    } else if (key == "linker_flags") {
+        config.linker_flags = StringUtils::split(value_str, ',');
     } else if (key == "platforms") {
         // Set default target platforms
         std::vector<std::string> platform_strings = StringUtils::split(value_str, ',');
@@ -143,6 +147,8 @@ void ConfigParser::process_target_config_line(const std::string& key, const std:
         target.library_dirs = StringUtils::split(value, ',');
     } else if (property == "libraries") {
         target.libraries = StringUtils::split(value, ',');
+    } else if (property == "linker_flags") {
+        target.linker_flags = StringUtils::split(value, ',');
     } else if (property == "platforms") {
         // Set target platforms
         std::vector<std::string> platform_strings = StringUtils::split(value, ',');
@@ -268,6 +274,8 @@ void ConfigParser::apply_platform_property(PlatformConfig& plat_config, const st
         plat_config.library_dirs = StringUtils::split(value, ',');
     } else if (property == "libraries") {
         plat_config.libraries = StringUtils::split(value, ',');
+    } else if (property == "linker_flags") {
+        plat_config.linker_flags = StringUtils::split(value, ',');
     } else if (property == "output_suffix") {
         plat_config.output_name_suffix = value;
     }

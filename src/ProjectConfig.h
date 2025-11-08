@@ -53,6 +53,7 @@ struct BuildTarget {
     std::vector<std::string> include_dirs;
     std::vector<std::string> library_dirs;
     std::vector<std::string> libraries;
+    std::vector<std::string> linker_flags;   // Raw linker flags
     
     // Platform-specific configurations
     std::map<Platform, PlatformConfig> platform_configs;
@@ -100,6 +101,7 @@ struct ProjectConfig {
     std::vector<std::string> global_include_dirs;
     std::vector<std::string> global_library_dirs;
     std::vector<std::string> global_libraries;
+    std::vector<std::string> global_linker_flags;   // Global raw linker flags
 
     // Global git paths
     std::vector<std::string> dependencies_url; // URLs of git repositories
@@ -124,6 +126,7 @@ struct ProjectConfig {
     std::vector<std::string> include_dirs;
     std::vector<std::string> library_dirs;
     std::vector<std::string> libraries;
+    std::vector<std::string> linker_flags;
 
     /**
      * @brief Checks if the configuration has the minimum required fields

@@ -121,6 +121,7 @@ struct PlatformConfig {
     std::vector<std::string> include_dirs;
     std::vector<std::string> library_dirs;
     std::vector<std::string> libraries;
+    std::vector<std::string> linker_flags;   // Raw linker flags (e.g., -lws2_32)
     std::string output_name_suffix;  // e.g., "_x64", "_win32"
     
     PlatformConfig() = default;
