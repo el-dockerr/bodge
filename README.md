@@ -68,6 +68,13 @@ make
 g++ -std=c++17 -Wall -Wextra -Isrc src/*.cpp -o bodge
 ```
 
+### FreeBSD Compilation
+```bash
+c++ -Wall -Lsrc src/*.cpp -o bodge
+cp bodge /usr/local/bin/bodge
+```
+
+
 ## Key Features
 
 ### **Multi-Target Support**
